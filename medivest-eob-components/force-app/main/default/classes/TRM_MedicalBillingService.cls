@@ -716,13 +716,12 @@ public with sharing class TRM_MedicalBillingService {
                 billIds.add(item.Bill__c);
             }
 
-            // MVADM-188: Query max line number for each Bill with FOR UPDATE lock
+            // MVADM-188: Query max line number for each Bill
             for (Id billId : billIds) {
                 List<AggregateResult> results = [
                     SELECT MAX(Bill_Line_Item_Number__c) maxNum
                     FROM Bill_Line_Item__c
                     WHERE Bill__c = :billId
-                    FOR UPDATE
                 ];
                 Decimal maxNum = (Decimal)results[0].get('maxNum');
                 billToMaxLineNumber.put(billId, maxNum != null ? maxNum : 0);
