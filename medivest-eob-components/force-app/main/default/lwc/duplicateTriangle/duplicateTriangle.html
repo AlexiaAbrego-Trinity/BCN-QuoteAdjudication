@@ -1,0 +1,22 @@
+<template>
+    <!-- Loading state -->
+    <template if:true={isLoading}>
+        <div class="duplicate-indicator loading">
+            <lightning-spinner alternative-text="Checking for duplicates..." size="xx-small"></lightning-spinner>
+        </div>
+    </template>
+
+    <!-- Triangle indicator (when not loading) -->
+    <template if:false={isLoading}>
+        <div class="duplicate-indicator" if:true={showTriangle}>
+            <lightning-icon
+                icon-name={triangleIcon}
+                alternative-text={triangleAltText}
+                size="x-small"
+                class={triangleClass}
+                onclick={handleTriangleClick}
+                title={hoverText}>
+            </lightning-icon>
+        </div>
+    </template>
+</template>

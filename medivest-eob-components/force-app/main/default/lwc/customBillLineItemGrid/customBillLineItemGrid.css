@@ -1,0 +1,790 @@
+/* TRINITY: Professional Medical Billing Grid Styling */
+/* Clean, maintainable CSS without over-engineering */
+
+/* TRINITY PHASE 1: Field Width Constraints (meeting requirements) */
+/* ANTI-OVERENGINEERING: Fixed min/max constraints, NOT dynamic calculation */
+:host {
+    --field-line-number-width: 60px;      /* 2-3 digits max */
+    --field-pos-width: 60px;              /* POS: 3-4 chars */
+    --field-revenue-width: 70px;          /* Revenue Code: 4 chars */
+    --field-hcpcs-cpt-ndc-width: 150px;   /* HCPCS/CPT/NDC: 13 chars (NDC longest) */
+    --field-modifier-width: 80px;         /* Modifier: 4 chars */
+    --field-quantity-width: 80px;         /* Quantity: 5 digits */
+    --field-charge-width: 120px;          /* Charge: 6 digits ($350,000) */
+    --field-description-min-width: 150px; /* TRINITY FIX: Description needs more space for medical terminology */
+    --field-description-max-width: 300px; /* TRINITY FIX: Increased for full medical terminology visibility */
+    --field-payment-width: 120px;         /* Payment fields: 6 digits ($999,999.99 format) */
+    --field-account-width: 150px;         /* TRINITY FIX: Account names need more space */
+    --field-remark-code-width: 100px;     /* TRINITY FIX: Remark codes (e.g., "N130", "Test DX2") */
+    --field-adjustment-width: 120px;      /* TRINITY FIX: Adjustment/Savings Fee currency fields */
+    --slds-c-input-text-color: #222;  
+}
+
+ 
+
+.custom-grid-container {
+    background: #ffffff;
+    border-radius: 0.5rem; /* Increased for modern look */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Enhanced shadow */
+    border: 1px solid var(--gray-medium);
+    overflow: hidden;
+}
+
+/* Header styling - TRINITY: Professional demo appearance */
+.custom-grid-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem; /* Increased padding */
+    background: linear-gradient(135deg, var(--primary-blue) 0%, #0056b3 100%);
+    color: white; /* White text on blue background */
+    border-bottom: 3px solid var(--primary-blue);
+    border-radius: 0.5rem 0.5rem 0 0; /* Match container radius */
+    font-weight: 600;
+    letter-spacing: 0.025em;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.selected-count {
+    color: #0176d3;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+/* MVADM-170: BCN Custom Status Badge - Read-only display */
+.bcn-status-badge {
+    margin-right: 1rem;
+}
+
+.bcn-status-badge .slds-badge {
+    background-color: #f3f4f6;
+    color: #374151;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+/* Grid container */
+.grid-container {
+    max-height: 70vh;
+    border-radius: 0 0 0.25rem 0.25rem;
+    overflow: hidden; /* Let scroll wrapper handle overflow */
+    position: relative; /* TRINITY: For proper scroll positioning */
+}
+
+/* TRINITY: Professional dual-axis scroll wrapper - SIMPLIFIED */
+.grid-scroll-wrapper {
+    overflow-x: scroll !important; /* TRINITY: ALWAYS show horizontal scrollbar - forced visibility */
+    overflow-y: auto; /* TRINITY: Always enable vertical scroll when needed */
+    max-width: 100%;
+    max-height: 70vh; /* TRINITY: Constrain height to enable vertical scroll */
+    /* Custom scrollbar styling for professional appearance */
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
+    /* TRINITY: Force scrollbar to always render by ensuring content width exceeds container */
+    position: relative;
+    /* TRINITY FIX: No padding-bottom - scrollbar should be visible at bottom of wrapper */
+}
+
+/* Webkit scrollbar styling for Chrome/Safari - TRINITY: Both axes */
+.grid-scroll-wrapper::-webkit-scrollbar {
+    width: 12px;  /* TRINITY: Vertical scrollbar width */
+    height: 12px; /* TRINITY: Horizontal scrollbar height - ALWAYS visible */
+    -webkit-appearance: none; /* TRINITY: Override default appearance for consistent rendering */
+}
+
+.grid-scroll-wrapper::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 6px;
+    /* TRINITY: Force track to always render */
+    -webkit-box-shadow: inset 0 0 1px rgba(0,0,0,0.1);
+}
+
+.grid-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 6px;
+    border: 2px solid #f3f4f6;
+    /* TRINITY: Ensure thumb is always visible */
+    min-width: 30px;
+}
+
+.grid-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* TRINITY: Corner styling where scrollbars meet */
+.grid-scroll-wrapper::-webkit-scrollbar-corner {
+    background: #f3f4f6;
+}
+
+/* Table styling - TRINITY: Dynamic width calculation */
+.custom-grid-table {
+    width: 100%;
+    /* TRINITY: Dynamic minimum width based on stage */
+    min-width: 1600px; /* Base width for keying stage */
+}
+
+/* TRINITY: Wider table for Bill Review stage - CLEAN APPROACH */
+.custom-grid-container[data-stage="billReview"] .custom-grid-table {
+    min-width: 2800px; /* TRINITY: Wide enough to trigger horizontal scroll */
+}
+
+.custom-grid-table th {
+    background: #f3f3f3;
+    font-weight: 600;
+    color: #3e3e3c;
+    padding: 0.75rem 1rem; /* TRINITY FIX: Increased horizontal padding from 0.5rem to 1rem */
+    border-bottom: 2px solid #d8dde6;
+    /* TRINITY: REMOVED border-right - resizer pseudo-element provides the separator (eliminates duplicate bars) */
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    min-height: 3rem; /* TRINITY: Ensure adequate header height */
+    white-space: nowrap; /* TRINITY FIX: Prevent header text wrapping/truncation */
+    text-align: left; /* TRINITY: Consistent alignment */
+}
+
+.custom-grid-table td {
+    padding: 0.5rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #e5e5e5;
+    min-height: 2.5rem; /* TRINITY: Ensure adequate row height for vertical scroll */
+    /* TRINITY PHASE 1: Allow dropdowns to overflow table cells */
+    position: relative;
+    overflow: visible;
+}
+
+/* Selection column */
+.selection-column {
+    width: 50px;
+    min-width: 50px;
+}
+
+/* Expandable column styling - TRINITY: Improved readability */
+.expandable-column-header {
+    position: relative;
+    min-width: 220px; /* Increased for better readability */
+    padding-right: 1.25rem; /* TRINITY: Extra padding to prevent toggle button overlap with resizer */
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-right: 0.5rem; /* TRINITY: Additional clearance from right edge for resizer */
+}
+
+.toggle-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-button:hover {
+    background: rgba(1, 118, 211, 0.1);
+}
+
+/* TRINITY: Styled expand/collapse icons */
+.expand-icon {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: bold;
+    color: #0176d3;
+    display: inline-block;
+    transition: color 0.2s ease;
+}
+
+.toggle-button:hover .expand-icon {
+    color: #014486;
+}
+
+.expandable-column {
+    min-width: 220px; /* Increased for better readability */
+    width: 240px;     /* Set comfortable default width */
+    padding: 0.75rem 0.5rem;
+}
+
+/* Stacked field display - TRINITY: Enhanced readability */
+.stacked-display {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem; /* Increased spacing between fields */
+    padding: 0.25rem 0;
+}
+
+.stacked-field {
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem; /* Increased from 0.8rem */
+    line-height: 1.3;   /* Increased from 1.2 */
+    min-height: 1.2rem; /* Ensure consistent height */
+}
+
+.field-label {
+    font-weight: 600;
+    color: #5a5a5a;
+    min-width: 3.5rem;  /* Increased from 3rem */
+    margin-right: 0.6rem; /* Increased from 0.5rem */
+    font-size: 0.8rem;  /* Increased from 0.75rem */
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.field-value {
+    color: #181818;
+    font-weight: 500;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Row styling */
+.data-row:hover {
+    background: rgba(1, 118, 211, 0.02);
+}
+
+.data-row:nth-child(even) {
+    background: rgba(0, 0, 0, 0.01);
+}
+
+.data-row:nth-child(even):hover {
+    background: rgba(1, 118, 211, 0.03);
+}
+
+/* Input styling */
+.custom-grid-table lightning-input {
+    --slds-c-input-sizing-border: 1px solid transparent;
+    --slds-c-input-color-border-focus: #0176d3;
+}
+
+.custom-grid-table lightning-input:hover {
+    --slds-c-input-sizing-border: 1px solid #d8dde6;
+}
+
+/* TRINITY v2.7.2: Simple text input styling for date fields */
+.custom-grid-table .date-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    background: white;
+    transition: border-color 0.15s ease;
+}
+
+.custom-grid-table .date-input:hover {
+    border-color: #d8dde6;
+}
+
+.custom-grid-table .date-input:focus {
+    outline: none;
+    border-color: #0176d3;
+    box-shadow: 0 0 3px rgba(1, 118, 211, 0.5);
+}
+
+/* Responsive behavior - TRINITY: Simplified */
+@media (max-width: 1200px) {
+    .custom-grid-table {
+        min-width: 1800px; /* TRINITY: Ensure horizontal scroll on smaller screens */
+    }
+}
+
+/* TRINITY: Mobile responsive */
+@media (max-width: 768px) {
+    .grid-container {
+        max-height: 60vh; /* TRINITY: Reduce height on mobile for better UX */
+    }
+
+    .grid-scroll-wrapper {
+        max-height: 60vh;
+    }
+
+    .custom-grid-table {
+        min-width: 2000px; /* TRINITY: Force horizontal scroll on mobile */
+    }
+}
+
+/* Loading and error states */
+.slds-spinner_container {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* TRINITY: Excel-style column resizing functionality */
+.resizable-column {
+    position: relative;
+    /* TRINITY: REMOVED border-right - resizer pseudo-element provides the separator (eliminates duplicate bars) */
+}
+
+.column-resizer {
+    position: absolute;
+    top: 0;
+    right: -5px; /* TRINITY v2.6.0: 5px on each side of border = 10px hit area, NO intrusion */
+    width: 10px; /* TRINITY: Maintain 10px hit area for easy clicking */
+    height: 100%;
+    cursor: col-resize;
+    background: transparent; /* TRINITY: Keep transparent, separator line provides visibility */
+    z-index: 11; /* TRINITY: Above header border for clean overlay */
+    border-right: none; /* TRINITY: Remove old border, use pseudo-element instead */
+    pointer-events: auto; /* TRINITY v2.6.0: Ensure resizer captures mouse events */
+    transition: background 0.2s ease;
+}
+
+/* TRINITY v2.6.0: Excel-style separator line positioned EXACTLY at border */
+.column-resizer::before {
+    content: '';
+    position: absolute;
+    right: 5px; /* TRINITY v2.6.0: Positioned at exact right edge of header */
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #d8dde6; /* TRINITY: Match existing table border color */
+    pointer-events: none; /* TRINITY: Don't interfere with resize drag */
+    transition: all 0.2s ease;
+}
+
+/* TRINITY: Excel-style hover effect - double line indicator */
+.column-resizer:hover {
+    background: rgba(1, 118, 211, 0.08); /* TRINITY: Subtle blue background on hover */
+}
+
+/* TRINITY: Transform single line to double line on hover (Excel style) */
+.column-resizer:hover::before {
+    width: 2px; /* TRINITY: Thicker line on hover */
+    background: #0176d3; /* TRINITY: Brand blue to indicate interactivity */
+    box-shadow: -1px 0 0 #0176d3, 1px 0 0 #0176d3; /* TRINITY: Creates double-line effect */
+}
+
+/* TRINITY: Active resize state - strong visual feedback during drag */
+.column-resizer.resizing {
+    background: rgba(1, 118, 211, 0.15); /* TRINITY: Stronger background during drag */
+}
+
+.column-resizer.resizing::before {
+    width: 3px; /* TRINITY: Even thicker during active resize */
+    background: #0176d3;
+    box-shadow: -2px 0 0 #0176d3, 2px 0 0 #0176d3; /* TRINITY: More prominent double-line */
+}
+
+.resizing-indicator {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--primary-blue);
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+/* Medicare status and duplicate flag styling */
+.medicare-status-cell {
+    text-align: center;
+    padding: 0.5rem;
+    width: 60px;
+    min-width: 60px;
+}
+
+.duplicate-flag-cell {
+    text-align: center;
+    padding: 0.5rem;
+    width: 40px;
+    min-width: 40px;
+}
+
+/* TRINITY PHASE 1: Column-specific width constraints */
+/* Applied via data-column attributes and inline styles */
+.line-number-cell {
+    width: var(--field-line-number-width);
+    min-width: var(--field-line-number-width);
+    max-width: var(--field-line-number-width);
+}
+
+/* Column resizer data-column specific widths */
+[data-column="lineNumber"] {
+    width: var(--field-line-number-width);
+}
+
+[data-column="pos"] {
+    min-width: var(--field-pos-width);
+}
+
+[data-column="revenue"] {
+    min-width: var(--field-revenue-width);
+}
+
+[data-column="cpt"] {
+    min-width: var(--field-hcpcs-cpt-ndc-width);
+}
+
+[data-column="modifier"] {
+    min-width: var(--field-modifier-width);
+}
+
+[data-column="quantity"] {
+    min-width: var(--field-quantity-width);
+}
+
+[data-column="charge"] {
+    min-width: var(--field-charge-width);
+}
+
+[data-column="description"] {
+    min-width: var(--field-description-min-width);
+    max-width: var(--field-description-max-width);
+}
+
+[data-column="paid"],
+[data-column="thirdParty"],
+[data-column="patResp"],
+[data-column="medicare"] {
+    min-width: var(--field-payment-width);
+}
+
+/* TRINITY FIX: Adjustment and Savings Fee columns */
+[data-column="adjustment"],
+[data-column="savingsFee"] {
+    min-width: var(--field-adjustment-width);
+}
+
+/* TRINITY FIX: Remark Code columns */
+[data-column="rc1"],
+[data-column="rc2"],
+[data-column="rc3"],
+[data-column="rc4"] {
+    min-width: var(--field-remark-code-width);
+}
+
+/* TRINITY FIX: Account column */
+[data-column="account"] {
+    min-width: var(--field-account-width);
+}
+
+/* TRINITY FIX: Specific column header min-widths to prevent truncation */
+th[scope="col"] {
+    min-width: 80px; /* Base minimum for all headers */
+}
+
+/* Longer header names need more space */
+.resizable-column:has([data-column="remarkCodes"]),
+th:has([data-column="remarkCodes"]) {
+    min-width: 140px; /* "Remark Codes" needs more space */
+}
+
+.resizable-column:has([data-column="serviceDates"]),
+th:has([data-column="serviceDates"]) {
+    min-width: 130px; /* "Service Date" needs more space */
+}
+
+.resizable-column:has([data-column="description"]),
+th:has([data-column="description"]) {
+    min-width: 150px; /* "Description" column */
+}
+
+/* TRINITY: Medicare status display styling (MVADM-76 - READ-ONLY) */
+.medicare-status-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    cursor: help; /* Show help cursor for tooltip */
+}
+
+.medicare-icon {
+    font-size: 1rem;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.medicare-yes {
+    color: #2e844a; /* Green checkmark */
+}
+
+.medicare-no {
+    color: #c23934; /* Red X */
+}
+
+.medicare-review {
+    color: #0176d3; /* Blue magnifying glass */
+}
+
+.medicare-tbd {
+    color: #706e6b; /* Gray question mark */
+    font-weight: bold;
+}
+
+.medicare-discretion {
+    color: #fe9339; /* Orange scales */
+}
+
+.medicare-text {
+    font-size: 0.875rem;
+    color: #3e3e3c;
+    white-space: nowrap;
+}
+
+/* Professional color scheme */
+:host {
+    --primary-blue: #0176d3;
+    --light-blue: #f0f8ff;
+    --gray-light: #f3f3f3;
+    --gray-medium: #d8dde6;
+    --gray-dark: #3e3e3c;
+    --success-green: #2d5016;
+    --error-red: #c23934;
+}
+
+/* ========================================
+   TRINITY PHASE 1.6: CONDITIONAL ROW FORMATTING
+   CHRIS'S #1 PRIORITY (10-15-25 Meeting)
+   ======================================== */
+
+/* TRINITY: Error rows - Critical validation failures */
+.row-error {
+    background-color: #FEDED8 !important; /* Light red background */
+    border-left: 4px solid #C23934 !important; /* Red left border */
+    transition: background-color 0.2s ease;
+}
+
+.row-error:hover {
+    background-color: #FDD4CC !important; /* Slightly darker on hover */
+}
+
+/* TRINITY: Warning rows - Non-critical validation issues */
+.row-warning {
+    background-color: #FFF4E6 !important; /* Light orange background */
+    border-left: 4px solid #FFB75D !important; /* Orange left border */
+    transition: background-color 0.2s ease;
+}
+
+.row-warning:hover {
+    background-color: #FFECD1 !important; /* Slightly darker on hover */
+}
+
+/* TRINITY: Valid rows - No validation issues (default state) */
+.row-valid {
+    background-color: #ffffff !important; /* White background */
+    border-left: 4px solid transparent !important; /* No left border */
+    transition: background-color 0.2s ease;
+}
+
+.row-valid:hover {
+    background-color: #f9f9f9 !important; /* Light gray on hover */
+}
+
+/* MVADM-155: Draft row styling - Persistent blank row for manual entry */
+.draft-row {
+    background-color: #f3f3f3 !important; /* Light gray background to distinguish from real rows */
+    border-top: 2px dashed #0070d2 !important; /* Dashed blue top border */
+    border-left: 4px solid #0070d2 !important; /* Solid blue left border */
+    transition: background-color 0.2s ease;
+}
+
+.draft-row:hover {
+    background-color: #e8e8e8 !important; /* Slightly darker on hover */
+}
+
+/* MVADM-155: Draft row indicator (optional visual cue in line number cell) */
+.draft-indicator {
+    color: #0070d2;
+    font-weight: 600;
+    font-style: italic;
+}
+
+/* TRINITY: Ensure row classes override alternating row colors */
+.grid-row.row-error,
+.grid-row.row-warning,
+.grid-row.row-valid,
+.grid-row.draft-row {
+    /* Row formatting takes precedence over alternating colors */
+}
+
+/* TRINITY UX: Context Menu Base Styling */
+.context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #d8dde6;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    z-index: 9999;
+    min-width: 280px;
+    max-width: 320px;
+    transition: opacity 0.2s ease-in-out;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+}
+
+/* TRINITY UX: Draggable Header */
+.context-menu-header {
+    cursor: move !important;
+    position: relative;
+    padding-right: 2rem !important;
+}
+
+.context-menu-header:hover {
+    background-color: #f3f3f3;
+}
+
+/* TRINITY UX: Close Button */
+.context-menu-close {
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.context-menu-close:hover {
+    background-color: #e5e5e5;
+}
+
+.context-menu-close:active {
+    background-color: #d8d8d8;
+}
+
+/* TRINITY PHASE 3: Payment Context Menu Styling */
+.payment-context-menu {
+    z-index: 10000;
+}
+
+.payment-context-menu .slds-popover {
+    min-width: 350px;
+    max-width: 450px;
+    border: 1px solid #d8dde6;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.payment-context-menu .slds-popover__body {
+    padding: 1rem;
+}
+
+.payment-context-menu .slds-form-element {
+    margin-bottom: 0.75rem;
+}
+
+.payment-context-menu .slds-text-body_small {
+    font-size: 0.75rem;
+    line-height: 1.25;
+}
+
+/* ========================================
+   TRINITY v2.4.3: FOOTER TOTALS (V1 REQUIREMENT - CRITICAL FOR EOB GENERATION)
+   Professional sticky footer with gradient background and shadow
+   Positioned INSIDE scroll wrapper - sticky within wrapper context
+   Scrollbar appears naturally at bottom of wrapper, below footer
+   Z-index hierarchy: Footer (11) > Table Header (10) > Table Body
+   ======================================== */
+
+.grid-footer {
+    position: sticky;
+    bottom: 0; /* TRINITY: Sticky within scroll wrapper - stays at bottom of visible area */
+    left: 0;
+    right: 0;
+    z-index: 11; /* TRINITY: Above table header (z-index: 10) */
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-top: 3px solid #0176d3;
+    padding: 12px 16px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    margin-top: 20px; /* TRINITY: Space between last row and footer */
+}
+
+.footer-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.footer-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    min-width: 180px;
+}
+
+.footer-label {
+    color: #3e3e3c;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.footer-value {
+    color: #0176d3;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    white-space: nowrap;
+}
+
+/* TRINITY: Responsive footer for mobile/tablet */
+@media (max-width: 768px) {
+    .grid-footer {
+        padding: 8px 12px;
+        min-height: auto;
+    }
+
+    .footer-row {
+        gap: 12px;
+    }
+
+    .footer-field {
+        min-width: 140px;
+        padding: 6px 10px;
+    }
+
+    .footer-label {
+        font-size: 0.75rem;
+    }
+
+    .footer-value {
+        font-size: 0.875rem;
+    }
+}
+
+/* ========================================
+   END TRINITY v2.4.3: FOOTER TOTALS
+   ======================================== */

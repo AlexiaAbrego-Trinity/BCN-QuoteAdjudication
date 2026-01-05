@@ -1,0 +1,158 @@
+/**
+ * Case Duplicate Summary Component Styles
+ * ADDED: For Case-level duplicate detection enhancement
+ * Follows Trinity design standards with white background requirement
+ */
+
+/* Component Container */
+.case-duplicate-summary {
+    background: white;
+    border-radius: 0.25rem;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+}
+
+/* Status-based styling */
+.case-duplicate-summary.status-exact {
+    border-left: 4px solid #c23934;
+}
+
+.case-duplicate-summary.status-potential {
+    border-left: 4px solid #fe9339;
+}
+
+.case-duplicate-summary.status-none {
+    border-left: 4px solid #4bca81;
+}
+
+/* Header Styling */
+.slds-card__header {
+    background: white;
+    padding: 1rem;
+}
+
+/* Summary Message */
+.summary-message {
+    font-weight: 500;
+    color: #3e3e3c;
+}
+
+/* Statistics Cards */
+.stat-card {
+    background: #f3f3f3;
+    border-radius: 0.25rem;
+    border: 1px solid #dddbda;
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    background: #ecebea;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+}
+
+.stat-number {
+    color: #080707;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.stat-label {
+    color: #706e6b;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.025rem;
+}
+
+/* Exact Match Styling */
+.stat-card--exact {
+    background: #fef7f7;
+    border-color: #c23934;
+}
+
+.stat-card--exact:hover {
+    background: #fed7d7;
+}
+
+.stat-card--exact .stat-number {
+    color: #c23934;
+}
+
+.stat-card--exact .stat-label {
+    color: #8c2022;
+}
+
+/* Potential Match Styling */
+.stat-card--potential {
+    background: #fefbf6;
+    border-color: #fe9339;
+}
+
+.stat-card--potential:hover {
+    background: #fed6a8;
+}
+
+.stat-card--potential .stat-number {
+    color: #fe9339;
+}
+
+.stat-card--potential .stat-label {
+    color: #b85d00;
+}
+
+/* Action Button */
+.view-all-button {
+    min-width: 200px;
+}
+
+/* Loading State */
+.slds-spinner_container {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* Error State */
+.slds-alert_error {
+    background: white;
+    border-left: 4px solid #c23934;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .slds-grid.slds-wrap .slds-col {
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-card {
+        padding: 0.75rem !important;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem !important;
+    }
+}
+
+/* Accessibility Enhancements */
+@media (prefers-reduced-motion: reduce) {
+    .stat-card {
+        transition: none;
+    }
+    
+    .stat-card:hover {
+        transform: none;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .case-duplicate-summary {
+        border: 2px solid #000;
+    }
+    
+    .stat-card {
+        border: 2px solid #000;
+    }
+    
+    .stat-number {
+        font-weight: 900;
+    }
+}

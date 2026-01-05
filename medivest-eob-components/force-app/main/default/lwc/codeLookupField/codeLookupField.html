@@ -1,0 +1,51 @@
+<template>
+    <!-- TRINITY: Enhanced Code Lookup with Description-First Display -->
+    <div class="lookup-container">
+        <!-- Simple text input showing description in expanded mode -->
+        <input
+            type="text"
+            class={inputClass}
+            value={searchTerm}
+            placeholder={placeholder}
+            oninput={handleInput}
+            onkeydown={handleKeyDown}
+            onblur={handleBlur}
+            onfocus={handleFocus}
+            autocomplete="off"
+        />
+
+        <!-- v2.7.2: Validation error message -->
+        <template if:true={validationError}>
+            <div class="validation-error">
+                {validationError}
+            </div>
+        </template>
+
+        <!-- Loading indicator -->
+        <template if:true={isSearching}>
+            <div class="loading-spinner">
+                <span>...</span>
+            </div>
+        </template>
+
+        <!-- Dropdown results - TRINITY: Description-first display -->
+        <template if:true={showDropdown}>
+            <div class="dropdown">
+                <template for:each={searchResults} for:item="result">
+                    <div
+                        key={result.codeId}
+                        class="dropdown-item"
+                        data-code-id={result.codeId}
+                        onclick={handleSelect}
+                    >
+                        <!-- TRINITY TOOLTIP ENHANCEMENT: Show description prominently with code in parentheses -->
+                        <div class="result-main">{result.displayText}</div>
+                        <template if:true={result.codeType}>
+                            <div class="result-type">{result.codeType}</div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </div>
+</template>

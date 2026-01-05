@@ -1,0 +1,252 @@
+<template>
+    <div class="bulk-operations-container">
+        
+        <!-- Bulk Operations Header -->
+        <div class="bulk-header">
+            <div class="slds-grid slds-wrap slds-gutters">
+                <div class="slds-col slds-size_1-of-2">
+                    <h3 class="bulk-title">
+                        <lightning-icon icon-name="utility:multi_select_checkbox" size="small" class="slds-m-right_small"></lightning-icon>
+                        Bulk Line Item Operations
+                    </h3>
+                    <p class="bulk-subtitle">Alt+Click for quick selection • Shift+Click for range selection</p>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-text-align_right">
+                    <span class="selection-counter">
+                        <lightning-icon icon-name="utility:check" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+                        {selectedCount} of {totalCount} selected
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Action Toolbar -->
+        <div class="quick-actions-toolbar">
+            <div class="slds-button-group" role="group">
+                
+                <!-- Selection Actions -->
+                <lightning-button 
+                    label="Select All" 
+                    icon-name="utility:select_all"
+                    variant="neutral"
+                    onclick={handleSelectAll}
+                    disabled={isProcessing}>
+                </lightning-button>
+                
+                <lightning-button 
+                    label="Clear Selection" 
+                    icon-name="utility:clear"
+                    variant="neutral"
+                    onclick={handleClearSelection}
+                    disabled={isProcessing}>
+                </lightning-button>
+                
+                <!-- Bulk RC Code Operations -->
+                <lightning-button 
+                    label="Apply RC Code" 
+                    icon-name="utility:code"
+                    variant="brand"
+                    onclick={handleBulkRCCode}
+                    disabled={disableBulkActions}>
+                </lightning-button>
+                
+                <!-- Bulk Financial Operations -->
+                <lightning-button 
+                    label="Calculate OI %" 
+                    icon-name="utility:percent"
+                    variant="success"
+                    onclick={handleBulkOICalculation}
+                    disabled={disableBulkActions}>
+                </lightning-button>
+                
+                <!-- Account Selection -->
+                <lightning-button 
+                    label="Set Account" 
+                    icon-name="utility:account"
+                    variant="neutral"
+                    onclick={handleBulkAccountSelection}
+                    disabled={disableBulkActions}>
+                </lightning-button>
+                
+            </div>
+        </div>
+
+        <!-- Advanced Operations Panel -->
+        <template if:true={showAdvancedPanel}>
+            <div class="advanced-panel">
+                
+                <!-- RC Code Bulk Application -->
+                <template if:true={showRCCodePanel}>
+                    <div class="operation-section">
+                        <h4 class="section-title">
+                            <lightning-icon icon-name="utility:code" size="x-small" class="slds-m-right_small"></lightning-icon>
+                            Bulk RC Code Application
+                        </h4>
+                        <div class="slds-grid slds-wrap slds-gutters">
+                            <div class="slds-col slds-size_1-of-4">
+                                <lightning-combobox
+                                    label="RC1 Code"
+                                    value={bulkRC1}
+                                    options={rcCodeOptions}
+                                    onchange={handleRC1Change}>
+                                </lightning-combobox>
+                            </div>
+                            <div class="slds-col slds-size_1-of-4">
+                                <lightning-combobox
+                                    label="RC2 Code"
+                                    value={bulkRC2}
+                                    options={rcCodeOptions}
+                                    onchange={handleRC2Change}>
+                                </lightning-combobox>
+                            </div>
+                            <div class="slds-col slds-size_1-of-4">
+                                <lightning-combobox
+                                    label="RC3 Code"
+                                    value={bulkRC3}
+                                    options={rcCodeOptions}
+                                    onchange={handleRC3Change}>
+                                </lightning-combobox>
+                            </div>
+                            <div class="slds-col slds-size_1-of-4">
+                                <lightning-combobox
+                                    label="RC4 Code"
+                                    value={bulkRC4}
+                                    options={rcCodeOptions}
+                                    onchange={handleRC4Change}>
+                                </lightning-combobox>
+                            </div>
+                        </div>
+                        <div class="slds-m-top_medium">
+                            <lightning-button 
+                                label="Apply RC Codes to Selected Items" 
+                                variant="brand"
+                                onclick={handleApplyRCCodes}
+                                disabled={isProcessing}>
+                            </lightning-button>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- OI Percentage Calculation -->
+                <template if:true={showOIPanel}>
+                    <div class="operation-section">
+                        <h4 class="section-title">
+                            <lightning-icon icon-name="utility:percent" size="x-small" class="slds-m-right_small"></lightning-icon>
+                            Bulk OI Percentage Calculation
+                        </h4>
+                        <div class="slds-grid slds-wrap slds-gutters">
+                            <div class="slds-col slds-size_1-of-3">
+                                <lightning-input
+                                    label="OI Allow Percentage"
+                                    type="number"
+                                    value={oiAllowPercentage}
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    onchange={handleOIAllowPercentageChange}>
+                                </lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-3">
+                                <lightning-input
+                                    label="OI Paid Percentage"
+                                    type="number"
+                                    value={oiPaidPercentage}
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    onchange={handleOIPaidPercentageChange}>
+                                </lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-3">
+                                <lightning-input
+                                    label="Patient Responsibility %"
+                                    type="number"
+                                    value={patientRespPercentage}
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    onchange={handlePatientRespPercentageChange}>
+                                </lightning-input>
+                            </div>
+                        </div>
+                        <div class="slds-m-top_medium">
+                            <lightning-button 
+                                label="Calculate and Apply Percentages" 
+                                variant="success"
+                                onclick={handleApplyOICalculations}
+                                disabled={isProcessing}>
+                            </lightning-button>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Account Selection Panel -->
+                <template if:true={showAccountPanel}>
+                    <div class="operation-section">
+                        <h4 class="section-title">
+                            <lightning-icon icon-name="utility:account" size="x-small" class="slds-m-right_small"></lightning-icon>
+                            Bulk Account Assignment
+                        </h4>
+                        <div class="slds-grid slds-wrap slds-gutters">
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-combobox
+                                    label="Select Account"
+                                    value={selectedAccountId}
+                                    options={accountOptions}
+                                    onchange={handleAccountChange}>
+                                </lightning-combobox>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2">
+                                <div class="account-info">
+                                    <template if:true={selectedAccountInfo}>
+                                        <p><strong>Account:</strong> {selectedAccountInfo.name}</p>
+                                        <p><strong>Status:</strong> {selectedAccountInfo.status}</p>
+                                        <p><strong>Balance:</strong> 
+                                            <lightning-formatted-number 
+                                                value={selectedAccountInfo.balance} 
+                                                format-style="currency" 
+                                                currency-code="USD">
+                                            </lightning-formatted-number>
+                                        </p>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-m-top_medium">
+                            <lightning-button 
+                                label="Assign Account to Selected Items" 
+                                variant="neutral"
+                                onclick={handleApplyAccountAssignment}
+                                disabled={isProcessing}>
+                            </lightning-button>
+                        </div>
+                    </div>
+                </template>
+
+            </div>
+        </template>
+
+        <!-- Processing Indicator -->
+        <template if:true={isProcessing}>
+            <div class="processing-overlay">
+                <lightning-spinner alternative-text="Processing bulk operations..." size="medium"></lightning-spinner>
+                <p class="processing-message">{processingMessage}</p>
+            </div>
+        </template>
+
+        <!-- Results Summary -->
+        <template if:true={showResults}>
+            <div class="results-summary">
+                <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_success" role="alert">
+                    <span class="slds-assistive-text">Success</span>
+                    <h2>
+                        <lightning-icon icon-name="utility:success" size="small" class="slds-m-right_small"></lightning-icon>
+                        Bulk Operation Completed Successfully
+                    </h2>
+                    <p>{resultsMessage}</p>
+                </div>
+            </div>
+        </template>
+
+    </div>
+</template>

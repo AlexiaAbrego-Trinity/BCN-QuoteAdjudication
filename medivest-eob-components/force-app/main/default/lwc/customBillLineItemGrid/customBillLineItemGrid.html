@@ -1,0 +1,1244 @@
+<template>
+    <!-- TRINITY: Clean, professional header -->
+    <!-- TRINITY PHASE 3: Disable default context menu on entire grid -->
+    <div class="custom-grid-container" data-stage={selectedStage} oncontextmenu={preventDefaultContextMenu}>
+        <div class="custom-grid-header">
+            <div class="header-left">
+                <h2 class="slds-text-heading_medium">Bill Line Items</h2>
+                <template if:true={hasSelectedItems}>
+                    <span class="selected-count">({selectedCount} selected)</span>
+                </template>
+                <span class="slds-text-body_small slds-text-color_weak" style="margin-left: 8px;">v2.6.5-date-fix</span>
+            </div>
+            <div class="header-right">
+                <!-- MVADM-170: BCN Custom Status Badge (Read-Only Display) -->
+                <template if:true={billCustomStatus}>
+                    <div class="bcn-status-badge">
+                        <span class="slds-badge slds-badge_lightest">
+                            <lightning-icon icon-name="utility:info" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+                            Bill Status: {billCustomStatus}
+                        </span>
+                    </div>
+                </template>
+
+                <!-- Stage selector -->
+                <div class="stage-selector">
+                    <lightning-combobox
+                        name="stage"
+                        label="Stage"
+                        value={currentStage}
+                        placeholder="Select Stage"
+                        options={stageOptions}
+                        onchange={handleStageChange}
+                        variant="label-hidden">
+                    </lightning-combobox>
+                </div>
+
+                <!-- Action buttons -->
+                <template if:true={hasSelectedItems}>
+                    <lightning-button
+                        label="Duplicate"
+                        onclick={handleDuplicate}
+                        variant="neutral">
+                    </lightning-button>
+                    <lightning-button
+                        label="Delete"
+                        onclick={handleDelete}
+                        variant="destructive">
+                    </lightning-button>
+                </template>
+
+                <!-- TRINITY v2.3.2: Adjudicate button (Bill Review stage only) -->
+                <template if:true={showAdjudicateButton}>
+                    <lightning-button
+                        label="Adjudicate"
+                        onclick={handleAdjudicate}
+                        variant="brand"
+                        icon-name="utility:check"
+                        title="Run validation and adjudicate this case">
+                    </lightning-button>
+                </template>
+
+                <!-- TRINITY PHASE 1.6: View Report button (CHRIS'S #1 PRIORITY) -->
+                <!-- Shows after validation has been run, allows reopening validation modal -->
+                <template if:true={showViewReportButton}>
+                    <lightning-button
+                        label="View Report"
+                        onclick={handleViewReport}
+                        variant="neutral"
+                        icon-name="utility:preview"
+                        title="View validation report">
+                    </lightning-button>
+                </template>
+            </div>
+        </div>
+        
+        <!-- Loading spinner -->
+        <template if:true={isLoading}>
+            <div class="slds-is-relative slds-p-around_large">
+                <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+            </div>
+        </template>
+        
+        <!-- Error message -->
+        <template if:true={error}>
+            <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error" role="alert">
+                <span class="slds-assistive-text">Error</span>
+                <h2>{error}</h2>
+            </div>
+        </template>
+
+        <!-- TRINITY v2.5.1: BCN Validation Error (CRITICAL BLOCKER FIX) -->
+        <template if:true={showValidationError}>
+            <div class="slds-text-align_center slds-p-around_large">
+                <lightning-icon icon-name="utility:error" size="large" variant="error"></lightning-icon>
+                <h3 class="slds-text-heading_medium slds-m-top_medium slds-text-color_error">Cannot Load Bill Line Items</h3>
+                <p class="slds-text-body_regular slds-text-color_weak slds-m-top_small">
+                    {bcnValidationError}
+                </p>
+                <p class="slds-text-body_small slds-text-color_weak slds-m-top_medium">
+                    Please ensure the case has progressed to Keying stage and has a valid Bill (BCN) record before opening the Bill Line Items grid.
+                </p>
+            </div>
+        </template>
+
+        <!-- Main grid table -->
+        <template if:false={isLoading}>
+            <template if:false={error}>
+                <template if:true={showGrid}>
+                    <div class="grid-container">
+                    <!-- TRINITY: Horizontal scroll wrapper for professional grid navigation -->
+                    <div class="grid-scroll-wrapper">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered custom-grid-table">
+                        <!-- TRINITY v2.6.0: Excel-perfect column resizing with <colgroup> -->
+                        <colgroup>
+                            <!-- TRINITY: Keying/Bill Review view columns -->
+                            <template if:false={showQuoteView}>
+                                <!-- Fixed columns (no resize) -->
+                                <col class="selection-col">
+                                <col class="duplicate-col">
+
+                                <!-- Resizable columns -->
+                                <col data-column="lineNumber" style={lineNumberColWidth}>
+                                <col data-column="serviceDates" style={serviceDatesColWidth}>
+                                <template if:true={serviceDatesExpanded}>
+                                    <col data-column="endDate" style={endDateColWidth}>
+                                </template>
+                                <col data-column="codes" style={codesColWidth}>
+                                <template if:true={codesExpanded}>
+                                    <col data-column="pos" style={posColWidth}>
+                                    <col data-column="cpt" style={cptColWidth}>
+                                    <col data-column="modifier" style={modifierColWidth}>
+                                </template>
+                                <col data-column="quantity" style={quantityColWidth}>
+                                <!--<col data-column="customStatus" style={customStatusColWidth}--> 
+                                <col data-column="description" style={descriptionColWidth}>
+                                <col data-column="charge" style={chargeColWidth}>
+
+                                <!-- Adjudication columns (Bill Review stage only) -->
+                                <template if:true={showAdjudicationColumns}>
+                                    <col data-column="remarkCodes" style={remarkCodesColWidth}>
+                                    <template if:true={remarkCodesExpanded}>
+                                        <col data-column="rc2" style={rc2ColWidth}>
+                                        <col data-column="rc3" style={rc3ColWidth}>
+                                        <col data-column="rc4" style={rc4ColWidth}>
+                                    </template>
+                                    <col data-column="oiAllow" style={oiAllowColWidth}>
+                                    <col data-column="oiPaid" style={oiPaidColWidth}>
+                                    <col data-column="paid" style={paidColWidth}>
+                                    <col data-column="thirdParty" style={thirdPartyColWidth}>
+                                    <col data-column="patResp" style={patRespColWidth}>
+                                    <col data-column="account" style={accountColWidth}>
+                                    <col data-column="medicare" style={medicareColWidth}>
+                                </template>
+                            </template>
+
+                            <!-- TRINITY: Quote view columns -->
+                            <template if:true={showQuoteView}>
+                                <col class="selection-col">
+                                <col data-column="lineNumber" style={lineNumberColWidth}>
+                                <col data-column="description" style={descriptionColWidth}>
+                                <col data-column="quantity" style={quantityColWidth}>
+                                <col data-column="code" style={codeColWidth}>
+                                <col data-column="price" style={priceColWidth}>
+                                <col data-column="approvedAmount" style={approvedAmountColWidth}>
+                            </template>
+                        </colgroup>
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <!-- TRINITY v2.5.0: Keying/Bill Review headers (existing functionality) -->
+                                <template if:false={showQuoteView}>
+                                    <!-- Selection column -->
+                                    <th class="slds-text-align_center selection-column" scope="col">
+                                        <lightning-input
+                                            type="checkbox"
+                                            checked={allSelected}
+                                            onchange={handleSelectAll}
+                                            variant="label-hidden"
+                                            aria-label="Select All">
+                                        </lightning-input>
+                                    </th>
+
+                                    <!-- Duplicate Flag column -->
+                                    <th class="slds-text-align_center" scope="col" title="Duplicate Status">
+                                        <lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon>
+                                    </th>
+
+                                    <!-- TRINITY PHASE 1: Line Number column (meeting req line 172) -->
+                                    <th class="resizable-column slds-text-align_center" scope="col" style="width: 60px;">
+                                        Line #
+                                        <div class="column-resizer"
+                                             data-column="lineNumber"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+
+                                <!-- Service Dates - Expandable -->
+                                <th class="expandable-column-header resizable-column" scope="col">
+                                    <div class="header-content">
+                                        <span class="column-label">
+                                            <template if:false={serviceDatesExpanded}>Service Date</template>
+                                            <template if:true={serviceDatesExpanded}>Start Date</template>
+                                        </span>
+                                        <button class="toggle-button" onclick={toggleServiceDates} title="Toggle Service Dates">
+                                            <span class="expand-icon">
+                                                <template if:false={serviceDatesExpanded}>⟨⟩</template>
+                                                <template if:true={serviceDatesExpanded}>⟩⟨</template>
+                                            </span>
+                                        </button>
+                                    </div>
+                                    <div class="column-resizer"
+                                         data-column="serviceDates"
+                                         onmousedown={handleResizeStart}>
+                                    </div>
+                                </th>
+                                
+                                <!-- End Date (when expanded) -->
+                                <template if:true={serviceDatesExpanded}>
+                                    <th class="expandable-column-header resizable-column" scope="col">
+                                        <span class="column-label">End Date</span>
+                                        <div class="column-resizer"
+                                             data-column="endDate"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+                                </template>
+                                
+                                <!-- Codes - Expandable -->
+                                <th class="expandable-column-header resizable-column" scope="col">
+                                    <div class="header-content">
+                                        <span class="column-label">
+                                            <template if:false={codesExpanded}>Codes</template>
+                                            <template if:true={codesExpanded}>Revenue Code</template>
+                                        </span>
+                                        <button class="toggle-button" onclick={toggleCodes} title="Toggle Codes">
+                                            <span class="expand-icon">
+                                                <template if:false={codesExpanded}>⟨⟩</template>
+                                                <template if:true={codesExpanded}>⟩⟨</template>
+                                            </span>
+                                        </button>
+                                    </div>
+                                    <div class="column-resizer"
+                                         data-column="codes"
+                                         onmousedown={handleResizeStart}>
+                                    </div>
+                                </th>
+
+                                <!-- Additional code columns when expanded -->
+                                <template if:true={codesExpanded}>
+                                    <th class="expandable-column-header resizable-column" scope="col">
+                                        <span class="column-label">POS</span>
+                                        <div class="column-resizer"
+                                             data-column="pos"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+                                    <th class="expandable-column-header resizable-column" scope="col">
+                                        <!-- TRINITY PHASE 1: Updated per Ray's specification (meeting line 296) -->
+                                        <span class="column-label">HCPCS/CPT/NDC</span>
+                                        <div class="column-resizer"
+                                             data-column="cpt"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+                                    <th class="expandable-column-header resizable-column" scope="col">
+                                        <span class="column-label">Modifier</span>
+                                        <div class="column-resizer"
+                                             data-column="modifier"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+                                </template>
+
+                                <!-- Basic columns -->
+                                <th class="resizable-column" scope="col">
+                                    Quantity
+                                    <div class="column-resizer"
+                                         data-column="quantity"
+                                         onmousedown={handleResizeStart}>
+                                    </div>
+                                </th>
+                                <!--<th class="resizable-column" scope="col">
+                                    Status
+                                    <div class="column-resizer"
+                                        data-column="customStatus"
+                                        onmousedown={handleResizeStart}>
+                                    </div>
+                                </th-->
+                                <th class="resizable-column" scope="col">
+                                    Description
+                                    <div class="column-resizer"
+                                         data-column="description"
+                                         onmousedown={handleResizeStart}>
+                                    </div>
+                                </th>
+                                <th class="resizable-column" scope="col">
+                                    Charge
+                                    <div class="column-resizer"
+                                         data-column="charge"
+                                         onmousedown={handleResizeStart}>
+                                    </div>
+                                </th>
+                                
+                                <!-- Remark Codes - Expandable (Bill Review stage only) -->
+                                <template if:true={showAdjudicationColumns}>
+                                    <th class="expandable-column-header resizable-column" scope="col">
+                                        <div class="header-content">
+                                            <span class="column-label">
+                                                <template if:false={remarkCodesExpanded}>Remark Codes</template>
+                                                <template if:true={remarkCodesExpanded}>RC1</template>
+                                            </span>
+                                            <button class="toggle-button" onclick={toggleRemarkCodes} title="Toggle Remark Codes">
+                                                <span class="expand-icon">
+                                                    <template if:false={remarkCodesExpanded}>⟨⟩</template>
+                                                    <template if:true={remarkCodesExpanded}>⟩⟨</template>
+                                                </span>
+                                            </button>
+                                        </div>
+                                        <div class="column-resizer"
+                                             data-column="remarkCodes"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+
+                                    <!-- Additional remark code columns when expanded -->
+                                    <template if:true={remarkCodesExpanded}>
+                                        <th class="expandable-column-header resizable-column" scope="col">
+                                            <span class="column-label">RC2</span>
+                                            <div class="column-resizer"
+                                                 data-column="rc2"
+                                                 onmousedown={handleResizeStart}>
+                                            </div>
+                                        </th>
+                                        <th class="expandable-column-header resizable-column" scope="col">
+                                            <span class="column-label">RC3</span>
+                                            <div class="column-resizer"
+                                                 data-column="rc3"
+                                                 onmousedown={handleResizeStart}>
+                                            </div>
+                                        </th>
+                                        <th class="expandable-column-header resizable-column" scope="col">
+                                            <span class="column-label">RC4</span>
+                                            <div class="column-resizer"
+                                                 data-column="rc4"
+                                                 onmousedown={handleResizeStart}>
+                                            </div>
+                                        </th>
+                                    </template>
+
+                                    <!-- Other adjudication columns -->
+                                    <th class="resizable-column" scope="col">
+                                        OI Allow
+                                        <div class="column-resizer"
+                                             data-column="oiAllow"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+                                    <th class="resizable-column" scope="col">
+                                        OI Paid
+                                        <div class="column-resizer"
+                                             data-column="oiPaid"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+                                    <th class="resizable-column" scope="col">
+                                        Paid
+                                        <div class="column-resizer"
+                                             data-column="paid"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+                                    <th class="resizable-column" scope="col">
+                                        3rd Party
+                                        <div class="column-resizer"
+                                             data-column="thirdParty"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+                                    <th class="resizable-column" scope="col">
+                                        Pat Resp
+                                        <div class="column-resizer"
+                                             data-column="patResp"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+                                    <th class="resizable-column" scope="col">
+                                        Account
+                                        <div class="column-resizer"
+                                             data-column="account"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+                                    <th class="resizable-column" scope="col">
+                                        Medicare
+                                        <div class="column-resizer"
+                                             data-column="medicare"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+                                </template>
+                                </template>
+
+                                <!-- TRINITY v2.5.0: Quote View headers (simplified 6-column layout) -->
+                                <template if:true={showQuoteView}>
+                                    <!-- Selection column -->
+                                    <th class="slds-text-align_center selection-column" scope="col">
+                                        <lightning-input
+                                            type="checkbox"
+                                            checked={allSelected}
+                                            onchange={handleSelectAll}
+                                            variant="label-hidden"
+                                            aria-label="Select All">
+                                        </lightning-input>
+                                    </th>
+
+                                    <!-- Line Number -->
+                                    <th class="resizable-column slds-text-align_center" scope="col" style="width: 80px;">
+                                        Line #
+                                        <div class="column-resizer"
+                                             data-column="lineNumber"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+
+                                    <!-- Description -->
+                                    <th class="resizable-column" scope="col" style="width: 200px;">
+                                        Description
+                                        <div class="column-resizer"
+                                             data-column="description"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+
+                                    <!-- Quantity -->
+                                    <th class="resizable-column slds-text-align_center" scope="col" style="width: 80px;">
+                                        Qty
+                                        <div class="column-resizer"
+                                             data-column="quantity"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+
+                                    <!-- Code (HCPCS/CPT/NDC) -->
+                                    <th class="resizable-column" scope="col" style="width: 150px;">
+                                        Code
+                                        <div class="column-resizer"
+                                             data-column="code"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+
+                                    <!-- Price (Charge) -->
+                                    <th class="resizable-column slds-text-align_right" scope="col" style="width: 120px;">
+                                        Price
+                                        <div class="column-resizer"
+                                             data-column="price"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+
+                                    <!-- Approved Amount -->
+                                    <th class="resizable-column slds-text-align_right" scope="col" style="width: 120px;">
+                                        Approved Amount
+                                        <div class="column-resizer"
+                                             data-column="approvedAmount"
+                                             onmousedown={handleResizeStart}>
+                                        </div>
+                                    </th>
+                                </template>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={lineItems} for:item="item">
+                                <tr key={item.Id} class={item.rowClass}>
+                                    <!-- TRINITY v2.5.0: Keying/Bill Review rows (existing functionality) -->
+                                    <template if:false={showQuoteView}>
+                                        <!-- Selection checkbox -->
+                                        <td class="slds-text-align_center">
+                                            <lightning-input
+                                                type="checkbox"
+                                                checked={item.selected}
+                                                onchange={handleRowSelect}
+                                                data-row-id={item.Id}
+                                                variant="label-hidden"
+                                                aria-label="Select Row">
+                                            </lightning-input>
+                                        </td>
+
+                                        <!-- Duplicate Flag -->
+                                        <td class="slds-text-align_center duplicate-flag-cell">
+                                            <template if:true={item.isDuplicate}>
+                                                <lightning-icon
+                                                    icon-name="utility:warning"
+                                                    size="small"
+                                                    variant="warning"
+                                                    title={item.duplicateStatusLabel}>
+                                                </lightning-icon>
+                                            </template>
+                                        </td>
+
+                                        <!-- TRINITY PHASE 1: Line Number display (calculated from array index) -->
+                                        <td class="slds-text-align_center line-number-cell">
+                                            {item.lineNumber}
+                                        </td>
+
+                                    <!-- Service Dates -->
+                                    <template if:false={serviceDatesExpanded}>
+                                        <td class="expandable-column">
+                                            <div class="stacked-display">
+                                                <div class="stacked-field">
+                                                    <span class="field-label">Start:</span>
+                                                    <span class="field-value">{item.formattedStartDate}</span>
+                                                </div>
+                                                <div class="stacked-field">
+                                                    <span class="field-label">End:</span>
+                                                    <span class="field-value">{item.formattedEndDate}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </template>
+                                    <template if:true={serviceDatesExpanded}>
+                                        <td>
+                                            <!-- TRINITY v2.7.3: Use formatted date to prevent timezone shift -->
+                                            <input
+                                                type="text"
+                                                class="date-input"
+                                                value={item.formattedStartDate}
+                                                onchange={handleFieldChange}
+                                                onblur={handleFieldBlur}
+                                                onkeydown={handleKeyDown}
+                                                data-field="Service_Start_Date__c"
+                                                data-row-id={item.Id}
+                                                placeholder="MM/DD/YYYY">
+                                        </td>
+                                        <td>
+                                            <!-- TRINITY v2.7.3: Use formatted date to prevent timezone shift -->
+                                            <input
+                                                type="text"
+                                                class="date-input"
+                                                value={item.formattedEndDate}
+                                                onchange={handleFieldChange}
+                                                onblur={handleFieldBlur}
+                                                onkeydown={handleKeyDown}
+                                                data-field="Service_End_Date__c"
+                                                data-row-id={item.Id}
+                                                placeholder="MM/DD/YYYY">
+                                        </td>
+                                    </template>
+
+                                    <!-- Codes - Expandable with TRINITY Tooltip Enhancement -->
+                                    <template if:false={codesExpanded}>
+                                        <td class="expandable-column">
+                                            <!-- TRINITY: Wrap collapsed codes in hover tooltip -->
+                                            <c-hover-tooltip
+                                                content={item.codesDescriptionTooltip}
+                                                position="right"
+                                                max-width="400px"
+                                                delay="300"
+                                            >
+                                                <div class="stacked-display">
+                                                    <div class="stacked-field">
+                                                        <span class="field-label">Rev:</span>
+                                                        <span class="field-value">{item.revenueCodeDisplay}</span>
+                                                    </div>
+                                                    <div class="stacked-field">
+                                                        <span class="field-label">POS:</span>
+                                                        <span class="field-value">{item.posDisplay}</span>
+                                                    </div>
+                                                    <div class="stacked-field">
+                                                        <span class="field-label">CPT:</span>
+                                                        <span class="field-value">{item.cptDisplay}</span>
+                                                    </div>
+                                                    <div class="stacked-field">
+                                                        <span class="field-label">Mod:</span>
+                                                        <span class="field-value">{item.modifierDisplay}</span>
+                                                    </div>
+                                                </div>
+                                            </c-hover-tooltip>
+                                        </td>
+                                    </template>
+                                    <template if:true={codesExpanded}>
+                                        <td>
+                                            <!-- TRINITY TOOLTIP ENHANCEMENT: Revenue Code Lookup with description display -->
+                                            <c-code-lookup-field
+                                                field-name="Revenue_Code__c"
+                                                current-value={item.revenueCode}
+                                                current-description={item.revenueCodeDescription}
+                                                code-types={LOOKUP_FIELD_CONFIG.Revenue_Code__c.codeTypes}
+                                                placeholder={LOOKUP_FIELD_CONFIG.Revenue_Code__c.placeholder}
+                                                allow-custom-entry={LOOKUP_FIELD_CONFIG.Revenue_Code__c.allowCustomEntry}
+                                                data-row-id={item.Id}
+                                                oncodeselected={handleCodeSelected}>
+                                            </c-code-lookup-field>
+                                        </td>
+                                        <td>
+                                            <!-- TRINITY UAT: POS Code Lookup with description display -->
+                                            <c-code-lookup-field
+                                                field-name="Place_of_Service__c"
+                                                current-value={item.posCode}
+                                                current-description={item.posCodeDescription}
+                                                code-types={LOOKUP_FIELD_CONFIG.Place_of_Service__c.codeTypes}
+                                                placeholder={LOOKUP_FIELD_CONFIG.Place_of_Service__c.placeholder}
+                                                allow-custom-entry={LOOKUP_FIELD_CONFIG.Place_of_Service__c.allowCustomEntry}
+                                                data-row-id={item.Id}
+                                                oncodeselected={handleCodeSelected}>
+                                            </c-code-lookup-field>
+                                        </td>
+                                        <td>
+                                            <!-- TRINITY TOOLTIP ENHANCEMENT: CPT/HCPCS/NDC Code Lookup with description display -->
+                                            <c-code-lookup-field
+                                                field-name="CPT_HCPCS_NDC__c"
+                                                current-value={item.cptCode}
+                                                current-description={item.cptCodeDescription}
+                                                code-types={LOOKUP_FIELD_CONFIG.CPT_HCPCS_NDC__c.codeTypes}
+                                                placeholder={LOOKUP_FIELD_CONFIG.CPT_HCPCS_NDC__c.placeholder}
+                                                allow-custom-entry={LOOKUP_FIELD_CONFIG.CPT_HCPCS_NDC__c.allowCustomEntry}
+                                                data-row-id={item.Id}
+                                                oncodeselected={handleCodeSelected}>
+                                            </c-code-lookup-field>
+                                        </td>
+                                        <td>
+                                            <!-- TRINITY: Modifier field - will be enhanced with lookup later if needed -->
+                                            <lightning-input
+                                                type="text"
+                                                value={item.Modifier__c}
+                                                onchange={handleFieldChange}
+                                                onblur={handleFieldBlur}
+                                                onkeydown={handleKeyDown}
+                                                data-field="Modifier__c"
+                                                data-row-id={item.Id}
+                                                variant="label-hidden">
+                                            </lightning-input>
+                                        </td>
+                                    </template>
+
+                                    <!-- Basic editable columns -->
+                                    <td>
+                                        <lightning-input
+                                            type="number"
+                                            step="1"
+                                            value={item.Quantity__c}
+                                            onchange={handleFieldChange}
+                                            onblur={handleFieldBlur}
+                                            onkeydown={handleKeyDown}
+                                            data-field="Quantity__c"
+                                            data-row-id={item.Id}
+                                            variant="label-hidden">
+                                        </lightning-input>
+                                    </td>
+
+                                    <td>
+                                        <lightning-input
+                                            type="text"
+                                            value={item.Description__c}
+                                            onchange={handleFieldChange}
+                                            onblur={handleFieldBlur}
+                                            onkeydown={handleKeyDown}
+                                            data-field="Description__c"
+                                            data-row-id={item.Id}
+                                            variant="label-hidden">
+                                        </lightning-input>
+                                    </td>
+                                    <td>
+                                        <lightning-input
+                                            type="number"
+                                            step="0.01"
+                                            formatter="currency"
+                                            value={item.Charge__c}
+                                            onchange={handleFieldChange}
+                                            onblur={handleFieldBlur}
+                                            onkeydown={handleKeyDown}
+                                            data-field="Charge__c"
+                                            data-row-id={item.Id}
+                                            variant="label-hidden">
+                                        </lightning-input>
+                                    </td>
+                                    
+                                    <!-- Adjudication columns -->
+                                    <template if:true={showAdjudicationColumns}>
+                                        <!-- Remark Codes - Expandable -->
+                                        <template if:false={remarkCodesExpanded}>
+                                            <td class="expandable-column">
+                                                <div class="stacked-display">
+                                                    <div class="stacked-field">
+                                                        <span class="field-label">RC1:</span>
+                                                        <span class="field-value">{item.remarkCode1Display}</span>
+                                                    </div>
+                                                    <div class="stacked-field">
+                                                        <span class="field-label">RC2:</span>
+                                                        <span class="field-value">{item.remarkCode2Display}</span>
+                                                    </div>
+                                                    <div class="stacked-field">
+                                                        <span class="field-label">RC3:</span>
+                                                        <span class="field-value">{item.remarkCode3Display}</span>
+                                                    </div>
+                                                    <div class="stacked-field">
+                                                        <span class="field-label">RC4:</span>
+                                                        <span class="field-value">{item.remarkCode4Display}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </template>
+                                        <template if:true={remarkCodesExpanded}>
+                                            <td>
+                                                <!-- TRINITY PHASE 2: Right-click for bulk operations -->
+                                                <div oncontextmenu={handleRightClick} data-field-name="Remark_Code_1__c" data-row-id={item.Id}>
+                                                    <c-code-lookup-field
+                                                        field-name="Remark_Code_1__c"
+                                                        current-value={item.Remark_Code_1__c}
+                                                        code-types={LOOKUP_FIELD_CONFIG.Remark_Code_1__c.codeTypes}
+                                                        placeholder={LOOKUP_FIELD_CONFIG.Remark_Code_1__c.placeholder}
+                                                        allow-custom-entry={LOOKUP_FIELD_CONFIG.Remark_Code_1__c.allowCustomEntry}
+                                                        data-row-id={item.Id}
+                                                        oncodeselected={handleCodeSelected}>
+                                                    </c-code-lookup-field>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <!-- TRINITY PHASE 2: Right-click for bulk operations -->
+                                                <div oncontextmenu={handleRightClick} data-field-name="Remark_Code_2__c" data-row-id={item.Id}>
+                                                    <c-code-lookup-field
+                                                        field-name="Remark_Code_2__c"
+                                                        current-value={item.Remark_Code_2__c}
+                                                        code-types={LOOKUP_FIELD_CONFIG.Remark_Code_2__c.codeTypes}
+                                                        placeholder={LOOKUP_FIELD_CONFIG.Remark_Code_2__c.placeholder}
+                                                        allow-custom-entry={LOOKUP_FIELD_CONFIG.Remark_Code_2__c.allowCustomEntry}
+                                                        data-row-id={item.Id}
+                                                        oncodeselected={handleCodeSelected}>
+                                                    </c-code-lookup-field>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <!-- TRINITY PHASE 2: Right-click for bulk operations -->
+                                                <div oncontextmenu={handleRightClick} data-field-name="Remark_Code_3__c" data-row-id={item.Id}>
+                                                    <c-code-lookup-field
+                                                        field-name="Remark_Code_3__c"
+                                                        current-value={item.Remark_Code_3__c}
+                                                        code-types={LOOKUP_FIELD_CONFIG.Remark_Code_3__c.codeTypes}
+                                                        placeholder={LOOKUP_FIELD_CONFIG.Remark_Code_3__c.placeholder}
+                                                        allow-custom-entry={LOOKUP_FIELD_CONFIG.Remark_Code_3__c.allowCustomEntry}
+                                                        data-row-id={item.Id}
+                                                        oncodeselected={handleCodeSelected}>
+                                                    </c-code-lookup-field>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <!-- TRINITY PHASE 2: Right-click for bulk operations -->
+                                                <div oncontextmenu={handleRightClick} data-field-name="Remark_Code_4__c" data-row-id={item.Id}>
+                                                    <c-code-lookup-field
+                                                        field-name="Remark_Code_4__c"
+                                                        current-value={item.Remark_Code_4__c}
+                                                        code-types={LOOKUP_FIELD_CONFIG.Remark_Code_4__c.codeTypes}
+                                                        placeholder={LOOKUP_FIELD_CONFIG.Remark_Code_4__c.placeholder}
+                                                        allow-custom-entry={LOOKUP_FIELD_CONFIG.Remark_Code_4__c.allowCustomEntry}
+                                                        data-row-id={item.Id}
+                                                        oncodeselected={handleCodeSelected}>
+                                                    </c-code-lookup-field>
+                                                </div>
+                                            </td>
+                                        </template>
+
+                                        <!-- Other adjudication columns - TRINITY: All editable for demo -->
+                                        <td>
+                                            <lightning-input
+                                                type="number"
+                                                step="0.01"
+                                                formatter="currency"
+                                                value={item.Other_Ins_Allowed__c}
+                                                onchange={handleFieldChange}
+                                                onblur={handleFieldBlur}
+                                                onkeydown={handleKeyDown}
+                                                data-field="Other_Ins_Allowed__c"
+                                                data-row-id={item.Id}
+                                                variant="label-hidden">
+                                            </lightning-input>
+                                        </td>
+                                        <td>
+                                            <lightning-input
+                                                type="number"
+                                                step="0.01"
+                                                formatter="currency"
+                                                value={item.Other_Ins_Paid__c}
+                                                onchange={handleFieldChange}
+                                                onblur={handleFieldBlur}
+                                                onkeydown={handleKeyDown}
+                                                data-field="Other_Ins_Paid__c"
+                                                data-row-id={item.Id}
+                                                variant="label-hidden">
+                                            </lightning-input>
+                                        </td>
+                                        <td>
+                                            <!-- TRINITY PHASE 3: Right-click for payment bulk operations -->
+                                            <div oncontextmenu={handleRightClick} data-field-name="Approved_Amount__c" data-row-id={item.Id}>
+                                                <lightning-input
+                                                    type="number"
+                                                    step="0.01"
+                                                    formatter="currency"
+                                                    value={item.Approved_Amount__c}
+                                                    onchange={handleFieldChange}
+                                                    onblur={handleFieldBlur}
+                                                    onkeydown={handleKeyDown}
+                                                    data-field="Approved_Amount__c"
+                                                    data-row-id={item.Id}
+                                                    variant="label-hidden">
+                                                </lightning-input>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <!-- TRINITY: Currency field with right-click bulk operations -->
+                                            <div oncontextmenu={handleRightClick} data-field-name="X3rd_Party_Curr__c" data-row-id={item.Id}>
+                                                <lightning-input
+                                                    type="number"
+                                                    formatter="currency"
+                                                    step="0.01"
+                                                    value={item.X3rd_Party_Curr__c}
+                                                    onchange={handleFieldChange}
+                                                    onblur={handleFieldBlur}
+                                                    onkeydown={handleKeyDown}
+                                                    data-field="X3rd_Party_Curr__c"
+                                                    data-row-id={item.Id}
+                                                    variant="label-hidden">
+                                                </lightning-input>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <!-- TRINITY PHASE 3: Right-click for payment bulk operations -->
+                                            <div oncontextmenu={handleRightClick} data-field-name="Patient_Responsibility__c" data-row-id={item.Id}>
+                                                <lightning-input
+                                                    type="number"
+                                                    step="0.01"
+                                                    formatter="currency"
+                                                    value={item.Patient_Responsibility__c}
+                                                    onchange={handleFieldChange}
+                                                    onblur={handleFieldBlur}
+                                                    onkeydown={handleKeyDown}
+                                                    data-field="Patient_Responsibility__c"
+                                                    data-row-id={item.Id}
+                                                    variant="label-hidden">
+                                                </lightning-input>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <!-- TRINITY: Account dropdown - saves to Bill_Line_Item__c.Account__c -->
+                                            <lightning-combobox
+                                                name="Account__c"
+                                                value={item.Account__c}
+                                                placeholder="Select Account"
+                                                options={accountOptions}
+                                                onchange={handleFieldChange}
+                                                onblur={handleFieldBlur}
+                                                onkeydown={handleKeyDown}
+                                                data-field="Account__c"
+                                                data-row-id={item.Id}
+                                                variant="label-hidden"
+                                                class="grid-combobox">
+                                            </lightning-combobox>
+                                        </td>
+                                        <td class="medicare-status-cell">
+                                            <!-- TRINITY: READ-ONLY Medicare status display per MVADM-76 -->
+                                            <!-- Shows value from Code__r.Medicare_Covered__c with icon -->
+                                            <div class="medicare-status-display" title={item.medicareStatusTooltip}>
+                                                <template if:true={item.medicareStatusYes}>
+                                                    <span class="medicare-icon medicare-yes">✓</span>
+                                                    <span class="medicare-text">Yes</span>
+                                                </template>
+                                                <template if:true={item.medicareStatusNo}>
+                                                    <span class="medicare-icon medicare-no">✗</span>
+                                                    <span class="medicare-text">No</span>
+                                                </template>
+                                                <template if:true={item.medicareStatusReview}>
+                                                    <span class="medicare-icon medicare-review">🔍</span>
+                                                    <span class="medicare-text">Review</span>
+                                                </template>
+                                                <template if:true={item.medicareStatusTBD}>
+                                                    <span class="medicare-icon medicare-tbd">?</span>
+                                                    <span class="medicare-text">TBD</span>
+                                                </template>
+                                                <template if:true={item.medicareStatusDiscretion}>
+                                                    <span class="medicare-icon medicare-discretion">⚖</span>
+                                                    <span class="medicare-text">Discretion</span>
+                                                </template>
+                                            </div>
+                                        </td>
+                                    </template>
+                                    </template>
+
+                                    <!-- TRINITY v2.5.0: Quote View rows (simplified 6-column layout) -->
+                                    <template if:true={showQuoteView}>
+                                        <!-- Selection checkbox -->
+                                        <td class="slds-text-align_center">
+                                            <lightning-input
+                                                type="checkbox"
+                                                checked={item.selected}
+                                                onchange={handleRowSelect}
+                                                data-row-id={item.Id}
+                                                variant="label-hidden"
+                                                aria-label="Select Row">
+                                            </lightning-input>
+                                        </td>
+
+                                        <!-- Line Number -->
+                                        <td class="slds-text-align_center line-number-cell">
+                                            {item.lineNumber}
+                                        </td>
+
+                                        <!-- Description -->
+                                        <td>
+                                            <lightning-input
+                                                type="text"
+                                                value={item.Description__c}
+                                                onchange={handleFieldChange}
+                                                onblur={handleFieldBlur}
+                                                onkeydown={handleKeyDown}
+                                                data-field="Description__c"
+                                                data-row-id={item.Id}
+                                                variant="label-hidden">
+                                            </lightning-input>
+                                        </td>
+
+                                        <!-- Quantity -->
+                                        <td class="slds-text-align_center">
+                                            <lightning-input
+                                                type="number"
+                                                step="1"
+                                                value={item.Quantity__c}
+                                                onchange={handleFieldChange}
+                                                onblur={handleFieldBlur}
+                                                onkeydown={handleKeyDown}
+                                                data-field="Quantity__c"
+                                                data-row-id={item.Id}
+                                                variant="label-hidden">
+                                            </lightning-input>
+                                        </td>
+
+                                        <!-- Code (HCPCS/CPT/NDC) with code lookup -->
+                                        <td>
+                                            <c-code-lookup-field
+                                                field-name="CPT_HCPCS_NDC__c"
+                                                current-value={item.cptCode}
+                                                current-description={item.cptCodeDescription}
+                                                code-types={LOOKUP_FIELD_CONFIG.CPT_HCPCS_NDC__c.codeTypes}
+                                                placeholder={LOOKUP_FIELD_CONFIG.CPT_HCPCS_NDC__c.placeholder}
+                                                allow-custom-entry={LOOKUP_FIELD_CONFIG.CPT_HCPCS_NDC__c.allowCustomEntry}
+                                                data-row-id={item.Id}
+                                                oncodeselected={handleCodeSelected}>
+                                            </c-code-lookup-field>
+                                        </td>
+
+                                        <!-- Price (Charge) -->
+                                        <td class="slds-text-align_right">
+                                            <lightning-input
+                                                type="number"
+                                                step="0.01"
+                                                formatter="currency"
+                                                value={item.Charge__c}
+                                                onchange={handleFieldChange}
+                                                onblur={handleFieldBlur}
+                                                onkeydown={handleKeyDown}
+                                                data-field="Charge__c"
+                                                data-row-id={item.Id}
+                                                variant="label-hidden">
+                                            </lightning-input>
+                                        </td>
+
+                                        <!-- Approved Amount -->
+                                        <td class="slds-text-align_right">
+                                            <lightning-input
+                                                type="number"
+                                                step="0.01"
+                                                formatter="currency"
+                                                value={item.Approved_Amount__c}
+                                                onchange={handleFieldChange}
+                                                onblur={handleFieldBlur}
+                                                onkeydown={handleKeyDown}
+                                                data-field="Approved_Amount__c"
+                                                data-row-id={item.Id}
+                                                variant="label-hidden">
+                                            </lightning-input>
+                                        </td>
+                                    </template>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+
+                    <!-- ========================================
+                         TRINITY v2.4.3: FOOTER TOTALS (V1 REQUIREMENT - CRITICAL FOR EOB GENERATION)
+                         Positioned INSIDE scroll wrapper for proper scrollbar visibility
+                         Sticky within wrapper - always visible at bottom
+                         Scrolls horizontally WITH table content
+                         ======================================== -->
+                    <div class="grid-footer">
+                        <div class="footer-row">
+                            <!-- Total Charge - Always visible in both stages -->
+                            <div class="footer-field">
+                                <span class="footer-label">Total Charge:</span>
+                                <span class="footer-value">{formattedTotalCharge}</span>
+                            </div>
+
+                            <!-- Adjudication totals - Bill Review stage only -->
+                            <template if:true={showAdjudicationColumns}>
+                                <div class="footer-field">
+                                    <span class="footer-label">Total Paid:</span>
+                                    <span class="footer-value">{formattedTotalPaid}</span>
+                                </div>
+
+                                <div class="footer-field">
+                                    <span class="footer-label">Total Adjustments:</span>
+                                    <span class="footer-value">{formattedTotalAdjustments}</span>
+                                </div>
+
+                                <div class="footer-field">
+                                    <span class="footer-label">3rd Party Resp:</span>
+                                    <span class="footer-value">{formattedThirdPartyResp}</span>
+                                </div>
+
+                                <div class="footer-field">
+                                    <span class="footer-label">Patient Resp:</span>
+                                    <span class="footer-value">{formattedPatientResp}</span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <!-- END TRINITY v2.4.3: FOOTER TOTALS -->
+
+                    </div> <!-- Close grid-scroll-wrapper -->
+
+                </div>
+                </template>
+                <!-- END TRINITY v2.5.1: showGrid conditional -->
+            </template>
+        </template>
+    </div>
+
+    <!-- TRINITY: Duplication Modal -->
+    <template if:true={showDuplicationModal}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                            title="Close" onclick={closeDuplicationModal}>
+                        <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 class="slds-modal__title slds-hyphenate">Duplicate Line Items</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <p class="slds-m-bottom_small">
+                        You have selected <strong>{selectedIds.size}</strong> line item(s) to duplicate.
+                    </p>
+                    <div class="slds-form-element">
+                        <label class="slds-form-element__label" for="duplicate-count">
+                            How many duplicates of each item?
+                        </label>
+                        <div class="slds-form-element__control">
+                            <lightning-input
+                                id="duplicate-count"
+                                type="number"
+                                value={duplicateCount}
+                                min="1"
+                                max="100"
+                                onchange={handleDuplicateCountChange}
+                                variant="standard">
+                            </lightning-input>
+                        </div>
+                        <div class="slds-form-element__help">
+                            This will create <strong>{totalDuplicateRows}</strong> new rows total.
+                        </div>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={closeDuplicationModal}>
+                        Cancel
+                    </button>
+                    <button class="slds-button slds-button_brand" onclick={confirmDuplication}>
+                        Create Duplicates
+                    </button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- TRINITY PHASE 2: Simple Right-Click Context Menu for Bulk Operations -->
+    <template if:true={isSimpleContextMenu}>
+        <div class="context-menu" style={contextMenuStyle} onclick={stopPropagation}>
+            <div class="slds-dropdown slds-dropdown_left slds-dropdown_small">
+                <ul class="slds-dropdown__list" role="menu">
+                    <li class="slds-dropdown__header context-menu-header" role="separator"
+                        onmousedown={handleDragStart}
+                        data-draggable="true">
+                        <span class="slds-text-title_caps">Bulk Assignment</span>
+                        <button class="context-menu-close" onclick={closeContextMenu} title="Close">
+                            <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+                        </button>
+                    </li>
+                    <li class="slds-dropdown__item" role="presentation">
+                        <a href="javascript:void(0);" role="menuitem" tabindex="0" onclick={handleApplyToAll}>
+                            <span class="slds-truncate" title="Apply to all rows">Apply to all rows</span>
+                        </a>
+                    </li>
+                    <li class="slds-dropdown__item" role="presentation">
+                        <a href="javascript:void(0);" role="menuitem" tabindex="-1" onclick={handleApplyToBlank}>
+                            <span class="slds-truncate" title="Apply to blank rows only">Apply to blank rows only</span>
+                        </a>
+                    </li>
+                    <li class="slds-dropdown__item" role="presentation">
+                        <a href="javascript:void(0);" role="menuitem" tabindex="-1" onclick={handleApplyToFollowing}>
+                            <span class="slds-truncate" title="Apply to following rows">Apply to following rows...</span>
+                        </a>
+                    </li>
+                    <li class="slds-dropdown__item" role="separator"></li>
+                    <li class="slds-dropdown__item" role="presentation">
+                        <a href="javascript:void(0);" role="menuitem" tabindex="-1" onclick={closeContextMenu}>
+                            <span class="slds-truncate" title="Cancel">Cancel</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </template>
+
+    <!-- TRINITY PHASE 3: Payment Context Menu for Bulk Payment Operations -->
+    <template if:true={isPaymentContextMenu}>
+        <div class="context-menu payment-context-menu" style={contextMenuStyle} onclick={stopPropagation}>
+            <div class="slds-popover slds-popover_medium" role="dialog">
+                <div class="slds-popover__body">
+                    <div class="slds-form slds-form_stacked">
+                        <!-- Header with Drag Handle -->
+                        <div class="slds-text-heading_small slds-m-bottom_small context-menu-header"
+                             onmousedown={handleDragStart}
+                             data-draggable="true"
+                             style="cursor: move; position: relative; padding-right: 2rem;">
+                            Bulk Payment Operation
+                            <button class="context-menu-close" onclick={closeContextMenu} title="Close">
+                                <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+                            </button>
+                        </div>
+
+                        <!-- Operation Type Selection -->
+                        <div class="slds-form-element slds-m-bottom_small">
+                            <lightning-radio-group
+                                name="operationType"
+                                label="Operation Type"
+                                options={paymentOperationOptions}
+                                value={selectedPaymentOperation}
+                                onchange={handlePaymentOperationChange}
+                                variant="label-inline">
+                            </lightning-radio-group>
+                        </div>
+
+                        <!-- Percentage Input -->
+                        <template if:true={isPercentageOperation}>
+                            <div class="slds-form-element slds-m-bottom_small">
+                                <lightning-input
+                                    type="number"
+                                    label="Percentage of Charge"
+                                    value={paymentPercentage}
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    onchange={handlePaymentPercentageChange}
+                                    placeholder="e.g., 80">
+                                </lightning-input>
+                                <div class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
+                                    Example: 80% will calculate 80% of each row's Charge amount
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Fixed Amount Input -->
+                        <template if:true={isFixedAmountOperation}>
+                            <div class="slds-form-element slds-m-bottom_small">
+                                <lightning-input
+                                    type="number"
+                                    label="Fixed Dollar Amount"
+                                    value={paymentFixedAmount}
+                                    min="0"
+                                    step="0.01"
+                                    formatter="currency"
+                                    onchange={handlePaymentFixedAmountChange}
+                                    placeholder="e.g., 150.00">
+                                </lightning-input>
+                                <div class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
+                                    This amount will be applied to all selected rows
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Apply To Selection -->
+                        <div class="slds-form-element slds-m-bottom_small">
+                            <lightning-radio-group
+                                name="applyTo"
+                                label="Apply To"
+                                options={paymentApplyToOptions}
+                                value={paymentApplyTo}
+                                onchange={handlePaymentApplyToChange}
+                                variant="label-inline">
+                            </lightning-radio-group>
+                        </div>
+
+                        <!-- Following Rows Input -->
+                        <template if:true={showFollowingRowsInput}>
+                            <div class="slds-form-element slds-m-bottom_small">
+                                <lightning-input
+                                    type="number"
+                                    label="Number of Following Rows"
+                                    value={followingRowsCount}
+                                    min="1"
+                                    onchange={handleFollowingRowsChange}>
+                                </lightning-input>
+                            </div>
+                        </template>
+
+                        <!-- Action Buttons -->
+                        <div class="slds-grid slds-grid_align-end slds-m-top_small">
+                            <lightning-button
+                                label="Cancel"
+                                onclick={closeContextMenu}
+                                class="slds-m-right_x-small">
+                            </lightning-button>
+                            <lightning-button
+                                variant="brand"
+                                label="Apply"
+                                onclick={applyPaymentBulkOperation}
+                                disabled={isApplyDisabled}>
+                            </lightning-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- TRINITY v2.3.8-passed-rules-fix: Validation Report Modal -->
+    <template if:true={showValidationModal}>
+        <c-validation-report-modal
+            validation-result={validationResult}
+            is-processing={isProcessingAdjudication}
+            onclose={handleCloseValidationModal}
+            onfixissues={handleFixIssues}
+            onproceed={handleProceedWithAdjudication}>
+        </c-validation-report-modal>
+    </template>
+</template>

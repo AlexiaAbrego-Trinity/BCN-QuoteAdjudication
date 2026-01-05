@@ -1,0 +1,300 @@
+/**
+ * Duplicate Comparison Modal Styles
+ * White background implementation for readability
+ * Responsive design for different screen sizes
+ */
+
+/* Modal Content Styling */
+.comparison-content {
+    background-color: #ffffff;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Section Headers */
+.source-record-section, .matching-records-section {
+    margin-bottom: 1.5rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #f3f2f2;
+}
+
+.section-icon {
+    flex-shrink: 0;
+}
+
+.section-icon.warning-icon {
+    color: #ffb75d;
+}
+
+.section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #3e3e3c;
+    margin: 0;
+}
+
+/* Record Cards - WHITE BACKGROUND AS REQUIRED */
+.record-card {
+    background-color: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.record-card.source-record {
+    border-left: 4px solid #1b96ff;
+    background-color: #ffffff;
+}
+
+.record-card.match-record {
+    border-left: 4px solid #ffb75d;
+    background-color: #ffffff;
+}
+
+/* Record Headers */
+.record-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f3f2f2;
+}
+
+.record-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Record Type Badges */
+.record-type-badge, .match-type {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.source-badge {
+    background-color: #1b96ff;
+    color: #ffffff;
+}
+
+.match-type.exact-match {
+    background-color: #fe5c4c;
+    color: #ffffff;
+}
+
+.match-type.potential-match {
+    background-color: #ffb75d;
+    color: #ffffff;
+}
+
+.match-type.unknown-match {
+    background-color: #c9c7c5;
+    color: #3e3e3c;
+}
+
+/* Record Details Grid */
+.record-details {
+    background-color: #fafaf9;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #706e6b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    font-size: 0.875rem;
+    color: #3e3e3c;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.detail-value.charge-amount {
+    font-weight: 700;
+    color: #0d7377;
+}
+
+/* Matches Container */
+.matches-container {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+/* Custom Scrollbar */
+.matches-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.matches-container::-webkit-scrollbar-track {
+    background: #f3f2f2;
+    border-radius: 3px;
+}
+
+.matches-container::-webkit-scrollbar-thumb {
+    background: #c9c7c5;
+    border-radius: 3px;
+}
+
+.matches-container::-webkit-scrollbar-thumb:hover {
+    background: #706e6b;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .record-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .record-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .comparison-content {
+        padding: 0.75rem;
+    }
+    
+    .record-card {
+        padding: 0.75rem;
+    }
+    
+    .record-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .record-actions lightning-button {
+        width: 100%;
+    }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .record-card {
+        border: 2px solid #000000;
+        background-color: #ffffff;
+    }
+    
+    .section-title, .detail-value {
+        color: #000000;
+    }
+    
+    .record-details {
+        border: 1px solid #000000;
+        background-color: #ffffff;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .slds-modal {
+        transition: none;
+    }
+    
+    .slds-fade-in-open {
+        animation: none;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .record-card {
+        background-color: #ffffff !important;
+        border: 1px solid #000000;
+        box-shadow: none;
+        page-break-inside: avoid;
+    }
+    
+    .record-actions {
+        display: none;
+    }
+    
+    .slds-modal__footer {
+        display: none;
+    }
+}
+
+/* Focus Styles for Accessibility */
+.record-card:focus-within {
+    outline: 2px solid #1b96ff;
+    outline-offset: 2px;
+}
+
+/* Loading State */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #706e6b;
+    background-color: #ffffff;
+    border-radius: 0.375rem;
+    border: 1px dashed #c9c7c5;
+}
+
+.empty-state-icon {
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state-message {
+    font-size: 0.875rem;
+    margin: 0;
+}

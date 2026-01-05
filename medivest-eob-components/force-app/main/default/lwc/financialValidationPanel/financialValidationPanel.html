@@ -1,0 +1,275 @@
+<template>
+    <div class="financial-validation-container">
+        
+        <!-- Financial Validation Header -->
+        <div class="validation-header">
+            <div class="slds-grid slds-wrap slds-gutters">
+                <div class="slds-col slds-size_1-of-2">
+                    <h3 class="validation-title">
+                        <lightning-icon icon-name="utility:money" size="small" class="slds-m-right_small"></lightning-icon>
+                        Financial Validation & Calculations
+                    </h3>
+                    <p class="validation-subtitle">Real-time fund validation • Smart adjudication guidance</p>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-text-align_right">
+                    <span class={validationStatusClass}>
+                        <lightning-icon icon-name={validationStatusIcon} size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+                        {validationStatusText}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <template if:true={isLoading}>
+            <div class="loading-section">
+                <lightning-spinner alternative-text="Validating financial data..." size="medium"></lightning-spinner>
+                <p class="loading-message">Performing real-time financial validation...</p>
+            </div>
+        </template>
+
+        <!-- Error State -->
+        <template if:true={error}>
+            <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error" role="alert">
+                <span class="slds-assistive-text">Error</span>
+                <h2>Financial Validation Error: {error}</h2>
+            </div>
+        </template>
+
+        <!-- Main Financial Validation Content -->
+        <template if:false={isLoading}>
+            <template if:false={error}>
+                
+                <!-- Fund Availability Section -->
+                <div class="validation-section">
+                    <h4 class="section-title">
+                        <lightning-icon icon-name="utility:account" size="x-small" class="slds-m-right_small"></lightning-icon>
+                        Fund Availability Analysis
+                    </h4>
+                    <div class="slds-grid slds-wrap slds-gutters">
+                        <div class="slds-col slds-size_1-of-3">
+                            <div class="fund-card msa-fund">
+                                <div class="fund-header">
+                                    <lightning-icon icon-name="utility:money" size="small"></lightning-icon>
+                                    <span class="fund-type">MSA Funds</span>
+                                </div>
+                                <div class="fund-amount">
+                                    <lightning-formatted-number 
+                                        value={msaAvailable} 
+                                        format-style="currency" 
+                                        currency-code="USD">
+                                    </lightning-formatted-number>
+                                </div>
+                                <div class="fund-status">
+                                    <span class={msaStatusClass}>{msaStatusText}</span>
+                                </div>
+                                <div class="fund-details">
+                                    <p>Allocated: <lightning-formatted-number value={msaAllocated} format-style="currency" currency-code="USD"></lightning-formatted-number></p>
+                                    <p>Reserved: <lightning-formatted-number value={msaReserved} format-style="currency" currency-code="USD"></lightning-formatted-number></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-col slds-size_1-of-3">
+                            <div class="fund-card pca-fund">
+                                <div class="fund-header">
+                                    <lightning-icon icon-name="utility:prescription" size="small"></lightning-icon>
+                                    <span class="fund-type">PCA Funds</span>
+                                </div>
+                                <div class="fund-amount">
+                                    <lightning-formatted-number 
+                                        value={pcaAvailable} 
+                                        format-style="currency" 
+                                        currency-code="USD">
+                                    </lightning-formatted-number>
+                                </div>
+                                <div class="fund-status">
+                                    <span class={pcaStatusClass}>{pcaStatusText}</span>
+                                </div>
+                                <div class="fund-details">
+                                    <p>Allocated: <lightning-formatted-number value={pcaAllocated} format-style="currency" currency-code="USD"></lightning-formatted-number></p>
+                                    <p>Reserved: <lightning-formatted-number value={pcaReserved} format-style="currency" currency-code="USD"></lightning-formatted-number></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-col slds-size_1-of-3">
+                            <div class="fund-card sak-fund">
+                                <div class="fund-header">
+                                    <lightning-icon icon-name="utility:shield" size="small"></lightning-icon>
+                                    <span class="fund-type">SAK Funds</span>
+                                </div>
+                                <div class="fund-amount">
+                                    <lightning-formatted-number 
+                                        value={sakAvailable} 
+                                        format-style="currency" 
+                                        currency-code="USD">
+                                    </lightning-formatted-number>
+                                </div>
+                                <div class="fund-status">
+                                    <span class={sakStatusClass}>{sakStatusText}</span>
+                                </div>
+                                <div class="fund-details">
+                                    <p>Allocated: <lightning-formatted-number value={sakAllocated} format-style="currency" currency-code="USD"></lightning-formatted-number></p>
+                                    <p>Reserved: <lightning-formatted-number value={sakReserved} format-style="currency" currency-code="USD"></lightning-formatted-number></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Smart Calculations Section -->
+                <div class="validation-section">
+                    <h4 class="section-title">
+                        <lightning-icon icon-name="utility:calculator" size="x-small" class="slds-m-right_small"></lightning-icon>
+                        Smart Adjudication Calculations
+                    </h4>
+                    <div class="calculations-grid">
+                        <div class="calculation-card">
+                            <div class="calculation-header">
+                                <lightning-icon icon-name="utility:percent" size="small"></lightning-icon>
+                                <span class="calculation-title">Savings Analysis</span>
+                            </div>
+                            <div class="calculation-content">
+                                <div class="calculation-row">
+                                    <span class="label">Original Amount:</span>
+                                    <span class="value">
+                                        <lightning-formatted-number value={originalAmount} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                                    </span>
+                                </div>
+                                <div class="calculation-row">
+                                    <span class="label">Negotiated Amount:</span>
+                                    <span class="value">
+                                        <lightning-formatted-number value={negotiatedAmount} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                                    </span>
+                                </div>
+                                <div class="calculation-row highlight">
+                                    <span class="label">Total Savings:</span>
+                                    <span class="value savings-amount">
+                                        <lightning-formatted-number value={totalSavings} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                                        ({savingsPercentage}%)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="calculation-card">
+                            <div class="calculation-header">
+                                <lightning-icon icon-name="utility:currency" size="small"></lightning-icon>
+                                <span class="calculation-title">Fee Calculations</span>
+                            </div>
+                            <div class="calculation-content">
+                                <div class="calculation-row">
+                                    <span class="label">Bill Fee:</span>
+                                    <span class="value">
+                                        <lightning-formatted-number value={billFee} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                                    </span>
+                                </div>
+                                <div class="calculation-row">
+                                    <span class="label">Savings Fee ({savingsFeePercentage}%):</span>
+                                    <span class="value">
+                                        <lightning-formatted-number value={savingsFee} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                                    </span>
+                                </div>
+                                <div class="calculation-row highlight">
+                                    <span class="label">Total Fees:</span>
+                                    <span class="value fee-amount">
+                                        <lightning-formatted-number value={totalFees} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="calculation-card">
+                            <div class="calculation-header">
+                                <lightning-icon icon-name="utility:check" size="small"></lightning-icon>
+                                <span class="calculation-title">Net Analysis</span>
+                            </div>
+                            <div class="calculation-content">
+                                <div class="calculation-row">
+                                    <span class="label">Gross Savings:</span>
+                                    <span class="value">
+                                        <lightning-formatted-number value={totalSavings} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                                    </span>
+                                </div>
+                                <div class="calculation-row">
+                                    <span class="label">Less: Total Fees:</span>
+                                    <span class="value">
+                                        <lightning-formatted-number value={totalFees} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                                    </span>
+                                </div>
+                                <div class="calculation-row highlight">
+                                    <span class="label">Net Savings:</span>
+                                    <span class="value net-savings">
+                                        <lightning-formatted-number value={netSavings} format-style="currency" currency-code="USD"></lightning-formatted-number>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Validation Alerts Section -->
+                <div class="validation-section">
+                    <h4 class="section-title">
+                        <lightning-icon icon-name="utility:warning" size="x-small" class="slds-m-right_small"></lightning-icon>
+                        Validation Alerts & Guidance
+                    </h4>
+                    <div class="alerts-container">
+                        <template for:each={validationAlerts} for:item="alert">
+                            <div key={alert.id} class={alert.alertClass}>
+                                <lightning-icon icon-name={alert.icon} size="small" class="slds-m-right_small"></lightning-icon>
+                                <div class="alert-content">
+                                    <h5 class="alert-title">{alert.title}</h5>
+                                    <p class="alert-message">{alert.message}</p>
+                                    <template if:true={alert.action}>
+                                        <lightning-button 
+                                            label={alert.actionLabel} 
+                                            variant={alert.actionVariant}
+                                            onclick={alert.actionHandler}
+                                            class="slds-m-top_small">
+                                        </lightning-button>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-section">
+                    <div class="slds-grid slds-gutters">
+                        <div class="slds-col">
+                            <lightning-button
+                                variant="brand"
+                                label="Approve Adjudication"
+                                icon-name="utility:check"
+                                onclick={handleApproveAdjudication}
+                                disabled={hasBlockingAlerts}
+                                class="action-button">
+                            </lightning-button>
+                        </div>
+                        <div class="slds-col">
+                            <lightning-button
+                                variant="neutral"
+                                label="Request Additional Review"
+                                icon-name="utility:comments"
+                                onclick={handleRequestReview}
+                                class="action-button">
+                            </lightning-button>
+                        </div>
+                        <div class="slds-col">
+                            <lightning-button
+                                variant="destructive"
+                                label="Deny Claim"
+                                icon-name="utility:close"
+                                onclick={handleDenyClaim}
+                                class="action-button">
+                            </lightning-button>
+                        </div>
+                    </div>
+                </div>
+
+            </template>
+        </template>
+
+    </div>
+</template>

@@ -1,0 +1,203 @@
+<template>
+    <div class="professional-card">
+        <lightning-card icon-name="standard:settings">
+            <div slot="title" class="professional-title">
+                <lightning-icon icon-name="standard:settings" size="small" class="slds-m-right_small"></lightning-icon>
+                <span style="font-weight: 700; font-size: 1.25rem; color: #0176d3;">Adjudication Control Panel</span>
+                <span class="status-indicator status-active" style="margin-left: 1rem;">
+                    <lightning-icon icon-name="utility:success" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+                    Ready
+                </span>
+            </div>
+            <div class="slds-p-horizontal_medium slds-p-bottom_medium professional-content">
+            
+            <!-- Loading State -->
+            <template if:true={isLoading}>
+                <div class="slds-text-align_center slds-p-vertical_large">
+                    <lightning-spinner alternative-text="Loading adjudication controls..." size="medium"></lightning-spinner>
+                </div>
+            </template>
+
+            <!-- Error State -->
+            <template if:true={error}>
+                <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error" role="alert">
+                    <span class="slds-assistive-text">Error</span>
+                    <h2>Error loading adjudication controls: {error}</h2>
+                </div>
+            </template>
+
+            <!-- Main Control Panel -->
+            <template if:false={isLoading}>
+                <template if:false={error}>
+                    
+                    <!-- Case Information Header -->
+                    <div class="slds-box slds-theme_shade slds-m-bottom_medium">
+                        <div class="slds-grid slds-wrap">
+                            <div class="slds-col slds-size_1-of-3">
+                                <div class="slds-text-heading_small">Case Number</div>
+                                <div class="slds-text-body_regular">{controlData.caseNumber}</div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-3">
+                                <div class="slds-text-heading_small">Current Payment</div>
+                                <div class="slds-text-body_regular">
+                                    <lightning-formatted-number 
+                                        value={controlData.currentPayment} 
+                                        format-style="currency" 
+                                        currency-code="USD">
+                                    </lightning-formatted-number>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-3">
+                                <div class="slds-text-heading_small">Total Cost</div>
+                                <div class="slds-text-body_regular">
+                                    <lightning-formatted-number 
+                                        value={controlData.totalCost} 
+                                        format-style="currency" 
+                                        currency-code="USD">
+                                    </lightning-formatted-number>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fee Control Toggles -->
+                    <div class="slds-section slds-is-open">
+                        <h3 class="slds-section__title slds-theme_shade">
+                            <span class="slds-truncate slds-p-horizontal_small" title="Fee Processing Controls">
+                                Fee Processing Controls
+                            </span>
+                        </h3>
+                        <div class="slds-section__content slds-p-around_medium">
+                            
+                            <!-- Apply Bill Fee Toggle -->
+                            <div class="slds-form-element slds-m-bottom_medium">
+                                <div class="slds-form-element__control">
+                                    <div class="slds-checkbox">
+                                        <input type="checkbox"
+                                               id="apply-bill-fee"
+                                               value={controlData.applyBillFee}
+                                               checked={controlData.applyBillFee}
+                                               disabled={controlData.wamVendorException}
+                                               onchange={handleApplyBillFeeChange} />
+                                        <label class="slds-checkbox__label" for="apply-bill-fee">
+                                            <span class="slds-checkbox__faux"></span>
+                                            <span class="slds-form-element__label">
+                                                <strong>Apply Bill Fee</strong> - Per-BCN fee processing
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <div class="slds-form-element__help">
+                                        When checked, standard per-BCN fees will be applied to Medivest billing
+                                        <template if:true={controlData.wamVendorException}>
+                                            <br><strong style="color: #ff6b6b;">⚠️ Disabled due to WAM Vendor Exception</strong>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Apply Savings Fee Toggle -->
+                            <div class="slds-form-element slds-m-bottom_medium">
+                                <div class="slds-form-element__control">
+                                    <div class="slds-checkbox">
+                                        <input type="checkbox"
+                                               id="apply-savings-fee"
+                                               value={controlData.applySavingsFee}
+                                               checked={controlData.applySavingsFee}
+                                               disabled={controlData.wamVendorException}
+                                               onchange={handleApplySavingsFeeChange} />
+                                        <label class="slds-checkbox__label" for="apply-savings-fee">
+                                            <span class="slds-checkbox__faux"></span>
+                                            <span class="slds-form-element__label">
+                                                <strong>Apply Savings Fee</strong> - Percentage of savings fee processing
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <div class="slds-form-element__help">
+                                        When checked, percentage-based savings fees will be calculated and applied
+                                        <template if:true={controlData.wamVendorException}>
+                                            <br><strong style="color: #ff6b6b;">⚠️ Disabled due to WAM Vendor Exception</strong>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- WAM Vendor Exception Toggle -->
+                            <div class="slds-form-element slds-m-bottom_medium">
+                                <div class="slds-form-element__control">
+                                    <div class="slds-checkbox">
+                                        <input type="checkbox" 
+                                               id="wam-vendor-exception" 
+                                               value={controlData.wamVendorException}
+                                               checked={controlData.wamVendorException}
+                                               onchange={handleWamVendorExceptionChange} />
+                                        <label class="slds-checkbox__label" for="wam-vendor-exception">
+                                            <span class="slds-checkbox__faux"></span>
+                                            <span class="slds-form-element__label">
+                                                <strong>WAM Vendor Exception</strong> - Disable fees for preferred Rx vendor
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <div class="slds-form-element__help">
+                                        When checked, standard fees are bypassed for preferred WAM Rx vendor
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Financial Summary -->
+                    <div class="slds-section slds-is-open slds-m-top_medium">
+                        <h3 class="slds-section__title slds-theme_shade">
+                            <span class="slds-truncate slds-p-horizontal_small" title="Financial Summary">
+                                Financial Summary
+                            </span>
+                        </h3>
+                        <div class="slds-section__content slds-p-around_medium">
+                            <div class="slds-grid slds-wrap slds-gutters">
+                                <div class="slds-col slds-size_1-of-2">
+                                    <div class="slds-text-heading_small">MSA Funds Payment</div>
+                                    <div class="slds-text-body_regular">
+                                        <lightning-formatted-number 
+                                            value={controlData.msaFundsPayment} 
+                                            format-style="currency" 
+                                            currency-code="USD">
+                                        </lightning-formatted-number>
+                                    </div>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <div class="slds-text-heading_small">Non-MSA Funds Payment</div>
+                                    <div class="slds-text-body_regular">
+                                        <lightning-formatted-number 
+                                            value={controlData.nonMsaFundsPayment} 
+                                            format-style="currency" 
+                                            currency-code="USD">
+                                        </lightning-formatted-number>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="slds-m-top_medium slds-text-align_center">
+                        <lightning-button 
+                            variant="brand" 
+                            label="Save Changes" 
+                            onclick={handleSaveChanges}
+                            disabled={isSaving}>
+                        </lightning-button>
+                        <lightning-button 
+                            variant="neutral" 
+                            label="Reset to Defaults" 
+                            onclick={handleResetDefaults}
+                            class="slds-m-left_small">
+                        </lightning-button>
+                    </div>
+
+                </template>
+            </template>
+            </div>
+        </lightning-card>
+    </div>
+</template>

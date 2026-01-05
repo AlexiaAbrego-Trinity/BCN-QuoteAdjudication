@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>64.0</apiVersion>
+    <isExposed>false</isExposed>
+    <masterLabel>Validation Report Modal</masterLabel>
+    <description>Trinity Validation Report Modal - Professional adjudication validation display for Medivest BCN Quote system v2.3.0</description>
+</LightningComponentBundle>

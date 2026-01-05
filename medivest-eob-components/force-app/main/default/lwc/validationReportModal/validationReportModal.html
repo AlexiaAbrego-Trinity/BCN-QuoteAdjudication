@@ -1,0 +1,294 @@
+<template>
+    <!-- TRINITY VALIDATION REPORT MODAL v2.3.7-debug-passed - Professional, Clean, Slick -->
+    <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_large">
+        <div class="slds-modal__container">
+            
+            <!-- Modal Header - COMPACT -->
+            <header class="slds-modal__header validation-header">
+                <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                        title="Close"
+                        onclick={handleClose}>
+                    <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                    <span class="slds-assistive-text">Close</span>
+                </button>
+                <div class="header-content">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <h2 class="slds-modal__title validation-title">
+                            <lightning-icon icon-name="standard:approval" size="small"></lightning-icon>
+                            Adjudication Validation
+                        </h2>
+                        <span class="slds-text-body_small" style="color: rgba(255, 255, 255, 0.7);">v2.3.6-passed-rules</span>
+                    </div>
+                    <p class="validation-subtitle">
+                        Case #{caseNumber} • {totalLineItems} Items • {totalCharge}
+                    </p>
+                </div>
+            </header>
+
+            <!-- Modal Body -->
+            <div class="slds-modal__content slds-p-around_medium validation-content">
+                
+                <!-- Validating State - COMPACT -->
+                <template if:true={isValidating}>
+                    <div class="validation-progress">
+                        <lightning-spinner alternative-text="Validating" size="small"></lightning-spinner>
+                        <p class="progress-text">Validating adjudication rules...</p>
+                    </div>
+                </template>
+
+                <!-- Validation Complete State - COMPACT -->
+                <template if:true={validationComplete}>
+
+                    <!-- Status Banner - COMPACT with CATEGORY BREAKDOWN -->
+                    <div class={statusClass}>
+                        <lightning-icon icon-name={statusIcon} size="x-small"></lightning-icon>
+                        <span class="status-text">{statusText}</span>
+                        <div class="status-stats">
+                            <span class="stat-badge stat-error" if:true={bcnLevelCount}>
+                                BCN: {bcnLevelCount}
+                            </span>
+                            <span class="stat-badge stat-error" if:true={chargeLevelErrors}>
+                                Charges: {chargeLevelErrors}
+                            </span>
+                            <span class="stat-badge stat-warning" if:true={chargeLevelWarnings}>
+                                Charges: {chargeLevelWarnings}
+                            </span>
+                            <span class="stat-badge stat-error" if:true={lineItemCount}>
+                                Lines: {lineItemCount}
+                            </span>
+                            <span class="stat-badge stat-error" if:true={relationalIntegrityCount}>
+                                Relations: {relationalIntegrityCount}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 1: BCN-Level Validations -->
+                    <template if:true={hasBcnLevelFailures}>
+                        <div class="validation-section">
+                            <h3 class="section-title error-title">
+                                <lightning-icon icon-name="utility:case" size="x-small"></lightning-icon>
+                                BCN-Level Requirements
+                                <span class="section-count">({bcnLevelCount})</span>
+                            </h3>
+                            <div class="issues-list">
+                                <template for:each={bcnLevelFailures} for:item="failure">
+                                    <div key={failure.ruleId} class={failure.cssClass} title={failure.details}>
+                                        <div class="issue-row">
+                                            <span class="issue-icon">{failure.iconSymbol}</span>
+                                            <div class="issue-content">
+                                                <span class="issue-name">{failure.ruleName}</span>
+                                                <span class="issue-message">{failure.message}</span>
+                                            </div>
+                                            <lightning-icon
+                                                icon-name="utility:info"
+                                                size="xx-small"
+                                                class="info-icon"
+                                                title={failure.details}>
+                                            </lightning-icon>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- SECTION 2: Charge-Level Validations -->
+                    <template if:true={hasChargeLevelFailures}>
+                        <div class="validation-section">
+                            <h3 class="section-title">
+                                <lightning-icon icon-name="utility:currency" size="x-small"></lightning-icon>
+                                Charge & Payment Validations
+                                <span class="section-count">({chargeLevelCount})</span>
+                            </h3>
+                            <div class="issues-list">
+                                <template for:each={chargeLevelFailures} for:item="failure">
+                                    <div key={failure.ruleId} class={failure.cssClass} title={failure.details}>
+                                        <div class="issue-row">
+                                            <span class="issue-icon">{failure.iconSymbol}</span>
+                                            <div class="issue-content">
+                                                <span class="issue-name">{failure.ruleName}</span>
+                                                <span class="issue-message">{failure.message}</span>
+                                            </div>
+                                            <lightning-icon
+                                                icon-name="utility:info"
+                                                size="xx-small"
+                                                class="info-icon"
+                                                title={failure.details}>
+                                            </lightning-icon>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- SECTION 3: Line Item Validations -->
+                    <template if:true={hasLineItemFailures}>
+                        <div class="validation-section">
+                            <h3 class="section-title error-title">
+                                <lightning-icon icon-name="utility:rows" size="x-small"></lightning-icon>
+                                Line Item Requirements
+                                <span class="section-count">({lineItemCount})</span>
+                            </h3>
+                            <div class="issues-list">
+                                <template for:each={lineItemFailures} for:item="failure">
+                                    <div key={failure.ruleId} class={failure.cssClass} title={failure.details}>
+                                        <div class="issue-row">
+                                            <span class="issue-icon">{failure.iconSymbol}</span>
+                                            <div class="issue-content">
+                                                <span class="issue-name">{failure.ruleName}</span>
+                                                <span class="issue-message">{failure.message}</span>
+                                            </div>
+                                            <lightning-icon
+                                                icon-name="utility:info"
+                                                size="xx-small"
+                                                class="info-icon"
+                                                title={failure.details}>
+                                            </lightning-icon>
+                                        </div>
+                                        <template if:true={failure.affectedLineItems}>
+                                            <div class="issue-affected">
+                                                <lightning-icon icon-name="utility:rows" size="xx-small"></lightning-icon>
+                                                Lines: {failure.affectedLineItems}
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- SECTION 4: Relational Integrity Validations -->
+                    <template if:true={hasRelationalIntegrityFailures}>
+                        <div class="validation-section">
+                            <h3 class="section-title error-title">
+                                <lightning-icon icon-name="utility:link" size="x-small"></lightning-icon>
+                                Relational Integrity
+                                <span class="section-count">({relationalIntegrityCount})</span>
+                            </h3>
+                            <div class="issues-list">
+                                <template for:each={relationalIntegrityFailures} for:item="failure">
+                                    <div key={failure.ruleId} class={failure.cssClass} title={failure.details}>
+                                        <div class="issue-row">
+                                            <span class="issue-icon">{failure.iconSymbol}</span>
+                                            <div class="issue-content">
+                                                <span class="issue-name">{failure.ruleName}</span>
+                                                <span class="issue-message">{failure.message}</span>
+                                            </div>
+                                            <lightning-icon
+                                                icon-name="utility:info"
+                                                size="xx-small"
+                                                class="info-icon"
+                                                title={failure.details}>
+                                            </lightning-icon>
+                                        </div>
+                                        <template if:true={failure.affectedLineItems}>
+                                            <div class="issue-affected">
+                                                <lightning-icon icon-name="utility:rows" size="xx-small"></lightning-icon>
+                                                Lines: {failure.affectedLineItems}
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- SECTION 5: Passed Rules (Expandable) - TRINITY DEBUG FEATURE -->
+                    <template if:true={hasPassedRules}>
+                        <div class="validation-section passed-section">
+                            <div class="section-header-clickable" onclick={togglePassedRules}>
+                                <h3 class="section-title success-title">
+                                    <lightning-icon icon-name="utility:success" size="x-small"></lightning-icon>
+                                    Passed Validation Rules
+                                    <span class="section-count">({passedRulesCount})</span>
+                                </h3>
+                                <lightning-icon
+                                    icon-name={passedRulesExpandIcon}
+                                    size="x-small"
+                                    class="expand-icon">
+                                </lightning-icon>
+                            </div>
+
+                            <template if:true={showPassedRules}>
+                                <div class="passed-rules-list">
+                                    <template for:each={passedRules} for:item="pass">
+                                        <div key={pass.ruleId} class="passed-rule-card">
+                                            <div class="passed-rule-row">
+                                                <span class="passed-icon">✓</span>
+                                                <div class="passed-content">
+                                                    <span class="passed-name">{pass.ruleName}</span>
+                                                    <span class="passed-message">{pass.message}</span>
+                                                </div>
+                                                <span class="passed-category">{pass.category}</span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- Success State - COMPACT -->
+                    <template if:true={canProceed}>
+                        <template if:false={hasRedLineFailures}>
+                            <template if:false={hasYellowLineWarnings}>
+                                <div class="validation-success">
+                                    <lightning-icon icon-name="utility:success" size="medium" class="success-icon"></lightning-icon>
+                                    <div class="success-content">
+                                        <h3 class="success-title">All Validation Rules Passed</h3>
+                                        <p class="success-message">Ready for adjudication</p>
+                                    </div>
+                                </div>
+                            </template>
+                        </template>
+                    </template>
+
+                </template>
+            </div>
+
+            <!-- Modal Footer -->
+            <footer class="slds-modal__footer">
+                <template if:true={validationComplete}>
+                    <template if:true={canProceed}>
+                        <lightning-button
+                            label="Close"
+                            onclick={handleClose}
+                            variant="neutral"
+                            disabled={isProcessing}>
+                        </lightning-button>
+                        <lightning-button
+                            label="Proceed with Adjudication"
+                            onclick={handleProceed}
+                            variant="brand"
+                            disabled={isProcessing}
+                            icon-name={proceedButtonIcon}
+                            icon-position="left">
+                        </lightning-button>
+                    </template>
+                    <template if:false={canProceed}>
+                        <lightning-button 
+                            label="Close" 
+                            onclick={handleClose}
+                            variant="neutral">
+                        </lightning-button>
+                        <lightning-button 
+                            label="Fix Issues" 
+                            onclick={handleFixIssues}
+                            variant="brand">
+                        </lightning-button>
+                    </template>
+                </template>
+                <template if:true={isValidating}>
+                    <lightning-button 
+                        label="Cancel" 
+                        onclick={handleClose}
+                        variant="neutral">
+                    </lightning-button>
+                </template>
+            </footer>
+
+        </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+</template>

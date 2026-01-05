@@ -1,0 +1,84 @@
+<!--
+  @description Trinity-aligned LWC template for duplicate detection triangle indicator
+  @author Trinity Development Team
+  @date 2025-08-30
+  @version 2.0.0
+  
+  This template follows Trinity design principles:
+  - Safe template rendering with defensive conditionals
+  - Loading states and error handling
+  - Accessible design with proper ARIA labels
+  - Consistent styling with Salesforce Lightning Design System
+-->
+<template>
+    <!-- Loading state -->
+    <template if:true={isLoading}>
+        <div class="duplicate-indicator loading">
+            <lightning-spinner 
+                alternative-text="Checking for duplicates..." 
+                size="xx-small"
+                class="loading-spinner">
+            </lightning-spinner>
+        </div>
+    </template>
+
+    <!-- Error state -->
+    <template if:true={error}>
+        <div class="duplicate-indicator error">
+            <lightning-icon
+                icon-name="utility:error"
+                alternative-text="Error checking duplicates"
+                size="x-small"
+                variant="error"
+                title="Error occurred while checking for duplicates">
+            </lightning-icon>
+        </div>
+    </template>
+
+    <!-- Triangle indicator (when not loading and no error) -->
+    <template if:false={isLoading}>
+        <template if:false={error}>
+            <div class="duplicate-indicator-container">
+                <!-- Triangle indicator -->
+                <template if:true={showTriangle}>
+                    <div class="duplicate-indicator">
+                        <lightning-button-icon
+                            icon-name={triangleIcon}
+                            alternative-text={hoverText}
+                            size="small"
+                            variant={triangleVariant}
+                            class={triangleClass}
+                            onclick={handleTriangleClick}
+                            title={hoverText}>
+                        </lightning-button-icon>
+                    </div>
+                </template>
+
+                <!-- Manual check button (optional, for testing/admin use) -->
+                <template if:true={showManualCheckButton}>
+                    <div class="manual-check-container">
+                        <lightning-button
+                            label={manualCheckButtonLabel}
+                            onclick={handleManualCheck}
+                            disabled={isManualCheckRunning}
+                            size="small"
+                            variant="neutral"
+                            class="manual-check-button">
+                        </lightning-button>
+                    </div>
+                </template>
+
+                <!-- Debug information (only in development) -->
+                <template if:true={duplicateData.sourceRecord}>
+                    <div class="debug-info" data-debug="true">
+                        <p class="slds-text-body_small slds-text-color_weak">
+                            Status: {duplicateStatus} | 
+                            Matches: {totalMatches} | 
+                            Confidence: {duplicateData.confidence}%
+                        </p>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </template>
+</template>

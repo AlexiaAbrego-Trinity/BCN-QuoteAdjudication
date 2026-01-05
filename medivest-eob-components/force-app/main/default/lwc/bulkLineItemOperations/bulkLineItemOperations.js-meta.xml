@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>64.0</apiVersion>
+    <isExposed>true</isExposed>
+    <targets>
+        <target>lightning__RecordPage</target>
+        <target>lightning__AppPage</target>
+        <target>lightning__HomePage</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__RecordPage">
+            <objects>
+                <object>Case</object>
+                <object>Bill__c</object>
+                <object>Bill_Line_Item__c</object>
+            </objects>
+        </targetConfig>
+    </targetConfigs>
+    <masterLabel>Bulk Line Item Operations</masterLabel>
+    <description>Ray's advanced bulk operations for line items with Alt+Click functionality, percentage calculations, and RC code management for efficient Claims workflow</description>
+</LightningComponentBundle>

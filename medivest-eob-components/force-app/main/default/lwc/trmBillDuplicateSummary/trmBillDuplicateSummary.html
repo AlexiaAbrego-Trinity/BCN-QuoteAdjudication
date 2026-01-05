@@ -1,0 +1,289 @@
+<template>
+    <!-- Error State -->
+    <template if:true={hasError}>
+        <div class="error-container">
+            <lightning-icon icon-name="utility:error" variant="error" size="small"></lightning-icon>
+            <span class="error-message">Error loading duplicate summary: {errorMessage}</span>
+        </div>
+    </template>
+    
+    <!-- Loading State -->
+    <template if:true={isLoading}>
+        <div class="loading-container">
+            <lightning-spinner alternative-text="Loading duplicate summary..." size="small"></lightning-spinner>
+            <span class="loading-message">Loading duplicate summary...</span>
+        </div>
+    </template>
+    
+    <!-- Main Content -->
+    <template if:true={isVisible}>
+        <div class={summaryContainerClass}>
+            <!-- Header Section -->
+            <div class="summary-header">
+                <div class="icon-and-title">
+                    <lightning-icon 
+                        icon-name={warningIcon} 
+                        variant={iconVariant} 
+                        size="small"
+                        class="summary-icon">
+                    </lightning-icon>
+                    <h3 class="summary-title">Duplicate Detection Summary</h3>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <template if:true={hasWarnings}>
+                        <lightning-button 
+                            label="View Details" 
+                            onclick={handleViewDetails}
+                            variant="neutral"
+                            size="small"
+                            class="view-details-btn">
+                        </lightning-button>
+                    </template>
+                    
+                    <lightning-button 
+                        label={checkButtonLabel}
+                        onclick={handleCheckAllDuplicates}
+                        variant="brand"
+                        size="small"
+                        disabled={isCheckButtonDisabled}
+                        class="check-all-btn">
+                    </lightning-button>
+                </div>
+            </div>
+            
+            <!-- Summary Content -->
+            <div class="summary-content">
+                <!-- Main Summary Message -->
+                <div class="summary-message">
+                    <p class="message-text">{summaryMessage}</p>
+                </div>
+                
+                <!-- Detailed Breakdown (only show if there are warnings) -->
+                <template if:true={hasWarnings}>
+                    <div class="warning-breakdown">
+                        <div class="breakdown-grid">
+                            <!-- Exact Matches -->
+                            <template if:true={exactMatches}>
+                                <div class="breakdown-item exact-item">
+                                    <div class="breakdown-count">{exactMatches}</div>
+                                    <div class="breakdown-label">{exactMatchLabel}</div>
+                                    <div class="breakdown-description">Identical records requiring immediate review</div>
+                                </div>
+                            </template>
+                            
+                            <!-- Potential Matches -->
+                            <template if:true={potentialMatches}>
+                                <div class="breakdown-item potential-item">
+                                    <div class="breakdown-count">{potentialMatches}</div>
+                                    <div class="breakdown-label">{potentialMatchLabel}</div>
+                                    <div class="breakdown-description">Similar records needing verification</div>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <!-- Quick Stats -->
+                        <div class="quick-stats">
+                            <span class="stat-item">
+                                <strong>{totalLineItems}</strong> total line items
+                            </span>
+                            <span class="stat-separator">•</span>
+                            <span class="stat-item">
+                                <strong>{totalWarnings}</strong> requiring review
+                            </span>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- No Warnings State -->
+                <template if:false={hasWarnings}>
+                    <div class="no-warnings-content">
+                        <div class="success-stats">
+                            <span class="stat-item">
+                                <strong>{totalLineItems}</strong> line items checked
+                            </span>
+                            <span class="stat-separator">•</span>
+                            <span class="stat-item">
+                                <strong>0</strong> duplicates found
+                            </span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            
+            <!-- Footer with Last Check Info -->
+            <template if:true={summaryData.lastCheckDate}>
+                <div class="summary-footer">
+                    <span class="last-check-info">
+                        Last checked: <lightning-formatted-date-time 
+                            value={summaryData.lastCheckDate}
+                            year="numeric"
+                            month="short"
+                            day="2-digit"
+                            hour="2-digit"
+                            minute="2-digit">
+                        </lightning-formatted-date-time>
+                    </span>
+                </div>
+            </template>
+        </div>
+    </template>
+
+    <!-- Bill Duplicates Modal -->
+    <template if:true={showModal}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading" aria-modal="true"
+                 class="slds-modal slds-fade-in-open slds-modal_large">
+            <div class="slds-modal__container">
+                <!-- Modal Header -->
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                            title="Close" onclick={handleCloseModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading" class="slds-modal__title slds-hyphenate">
+                        Bill Duplicate Details
+                    </h2>
+                    <p class="slds-m-top_x-small slds-text-body_small slds-text-color_weak">
+                        Bill: {summaryData.billName} • {totalWarnings} duplicate matches found
+                    </p>
+                </header>
+
+                <!-- Modal Body -->
+                <div class="slds-modal__content slds-p-around_medium">
+                    <!-- Loading State -->
+                    <template if:true={isLoadingMatches}>
+                        <div class="slds-align_absolute-center slds-p-vertical_large">
+                            <lightning-spinner alternative-text="Loading duplicate matches..." size="medium"></lightning-spinner>
+                            <div class="slds-m-top_small slds-text-color_weak">Loading duplicate details...</div>
+                        </div>
+                    </template>
+
+                    <!-- Error State -->
+                    <template if:true={modalError}>
+                        <div class="slds-notify slds-notify_alert slds-alert_error">
+                            <span class="slds-assistive-text">Error</span>
+                            <h2 class="slds-text-heading_small">
+                                Unable to load duplicate details
+                            </h2>
+                            <p class="slds-m-top_x-small">
+                                {modalError}
+                            </p>
+                        </div>
+                    </template>
+
+                    <!-- Duplicate Matches Content -->
+                    <template if:false={isLoadingMatches}>
+                        <template if:true={hasMatchesToShow}>
+                            <template for:each={groupedMatches} for:item="group">
+                                <div key={group.groupTitle} class="match-group slds-m-bottom_large">
+                                    <!-- Group Header -->
+                                    <div class="slds-section slds-is-open">
+                                        <h3 class="slds-section__title slds-theme_shade">
+                                            <span class="slds-truncate slds-p-horizontal_small" title={group.groupTitle}>
+                                                {group.groupTitle} ({group.matches.length})
+                                            </span>
+                                        </h3>
+                                    </div>
+
+                                    <!-- Matches List -->
+                                    <div class="matches-container">
+                                        <template for:each={group.matches} for:item="match">
+                                            <div key={match.recordId} class="match-card slds-card slds-m-bottom_small">
+                                                <div class="slds-card__body slds-p-around_small">
+                                                    <div class="slds-grid slds-grid_align-spread">
+                                                        <!-- Match Details -->
+                                                        <div class="slds-col slds-size_3-of-4">
+                                                            <div class="slds-grid slds-wrap slds-gutters_x-small">
+                                                                <!-- Record Name & Match Type -->
+                                                                <div class="slds-col slds-size_1-of-1">
+                                                                    <h4 class="slds-text-heading_small">
+                                                                        <lightning-button
+                                                                            label={match.recordName}
+                                                                            variant="base"
+                                                                            data-record-id={match.recordId}
+                                                                            onclick={handleNavigateToRecord}
+                                                                            class="record-link">
+                                                                        </lightning-button>
+                                                                        <lightning-badge
+                                                                            label={match.matchTypeLabel}
+                                                                            class="slds-m-left_x-small match-type-badge">
+                                                                        </lightning-badge>
+                                                                    </h4>
+                                                                </div>
+
+                                                                <!-- Details Grid -->
+                                                                <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+                                                                    <div class="detail-item">
+                                                                        <span class="detail-label">Confidence:</span>
+                                                                        <span class="detail-value">{match.confidenceLabel}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+                                                                    <div class="detail-item">
+                                                                        <span class="detail-label">Charge:</span>
+                                                                        <span class="detail-value">{match.formattedChargeAmount}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+                                                                    <div class="detail-item">
+                                                                        <span class="detail-label">Service Date:</span>
+                                                                        <span class="detail-value">{match.formattedServiceDates}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+                                                                    <div class="detail-item">
+                                                                        <span class="detail-label">Procedure:</span>
+                                                                        <span class="detail-value">{match.procedureCode}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Actions -->
+                                                        <div class="slds-col slds-size_1-of-4 slds-text-align_right">
+                                                            <lightning-button
+                                                                label="View Record"
+                                                                variant="neutral"
+                                                                size="small"
+                                                                data-record-id={match.recordId}
+                                                                onclick={handleNavigateToRecord}
+                                                                class="slds-m-bottom_x-small">
+                                                            </lightning-button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </template>
+
+                        <!-- No Matches State -->
+                        <template if:false={hasMatchesToShow}>
+                            <div class="slds-align_absolute-center slds-p-vertical_large">
+                                <lightning-icon icon-name="utility:search" size="large" variant="neutral"></lightning-icon>
+                                <h3 class="slds-text-heading_medium slds-m-top_medium">No duplicate matches found</h3>
+                                <p class="slds-text-body_regular slds-text-color_weak slds-m-top_small">
+                                    All line items appear to be unique.
+                                </p>
+                            </div>
+                        </template>
+                    </template>
+                </div>
+
+                <!-- Modal Footer -->
+                <footer class="slds-modal__footer">
+                    <lightning-button
+                        label="Close"
+                        variant="neutral"
+                        onclick={handleCloseModal}>
+                    </lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

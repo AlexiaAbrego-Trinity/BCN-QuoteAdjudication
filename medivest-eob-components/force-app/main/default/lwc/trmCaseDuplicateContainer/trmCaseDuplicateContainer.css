@@ -1,0 +1,23 @@
+/**
+ * Case Duplicate Container Component Styles
+ * ADDED: For Case-level duplicate detection container
+ * Minimal styling - child components handle their own presentation
+ */
+
+/* Container */
+:host {
+    display: block;
+    background: transparent;
+}
+
+/* Ensure proper spacing between components */
+c-trm-case-duplicate-summary {
+    display: block;
+    margin-bottom: 1rem;
+}
+
+/* Modal positioning */
+c-trm-case-all-duplicates-modal {
+    position: relative;
+    z-index: 9000;
+}

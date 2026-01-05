@@ -1,0 +1,166 @@
+/* TRINITY: Professional Hover Tooltip Styling */
+/* Clean, elegant design for impressive client demo */
+
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.tooltip-trigger {
+    width: 100%;
+    cursor: help;
+}
+
+/* Base tooltip styling */
+.tooltip {
+    position: absolute;
+    z-index: 9999;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    border-radius: 8px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.tooltip.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Position-specific styling */
+.tooltip-top {
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.95);
+}
+
+.tooltip-top.show {
+    transform: translateX(-50%) scale(1);
+}
+
+.tooltip-bottom {
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.95);
+}
+
+.tooltip-bottom.show {
+    transform: translateX(-50%) scale(1);
+}
+
+.tooltip-left {
+    right: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%) scale(0.95);
+}
+
+.tooltip-left.show {
+    transform: translateY(-50%) scale(1);
+}
+
+.tooltip-right {
+    left: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%) scale(0.95);
+}
+
+.tooltip-right.show {
+    transform: translateY(-50%) scale(1);
+}
+
+/* Tooltip arrow indicators */
+.tooltip-top::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #2c3e50;
+}
+
+.tooltip-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-bottom-color: #2c3e50;
+}
+
+.tooltip-left::after {
+    content: '';
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-left-color: #2c3e50;
+}
+
+.tooltip-right::after {
+    content: '';
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-right-color: #2c3e50;
+}
+
+/* Tooltip inner content styling */
+.tooltip-inner {
+    max-width: 100%;
+    word-wrap: break-word;
+}
+
+/* TRINITY: Professional content formatting for code tooltips */
+.tooltip-inner :global(.tooltip-content) {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tooltip-inner :global(.tooltip-row) {
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.tooltip-inner :global(.tooltip-row:last-child) {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.tooltip-inner :global(.tooltip-row strong) {
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tooltip-inner :global(.tooltip-desc) {
+    color: #bdc3c7;
+    font-style: italic;
+    display: block;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .tooltip {
+        max-width: 280px !important;
+        font-size: 0.8rem;
+        padding: 12px 14px;
+    }
+}

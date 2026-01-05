@@ -1,0 +1,156 @@
+<template>
+    <!-- Modal Container -->
+    <template if:true={showModal}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading" aria-modal="true" 
+                 class="slds-modal slds-fade-in-open slds-modal_large">
+            <div class="slds-modal__container">
+                
+                <!-- Modal Header -->
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                            title="Close" onclick={handleClose}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading" class="slds-modal__title slds-hyphenate">
+                        Duplicate Records Comparison ({matchCount} matches)
+                    </h2>
+                </header>
+                
+                <!-- Modal Body -->
+                <div class="slds-modal__content slds-p-around_medium comparison-content">
+                    
+                    <!-- Source Record Section -->
+                    <div class="source-record-section">
+                        <div class="section-header">
+                            <lightning-icon icon-name="utility:record" size="small" class="section-icon"></lightning-icon>
+                            <h3 class="section-title">Current Record</h3>
+                        </div>
+                        
+                        <div class="record-card source-record">
+                            <div class="record-header">
+                                <span class="record-type-badge source-badge">Source</span>
+                                <div class="record-actions">
+                                    <lightning-button 
+                                        label="View Bill" 
+                                        onclick={handleViewSourceBill}
+                                        variant="neutral"
+                                        size="small">
+                                    </lightning-button>
+                                    <lightning-button 
+                                        label="View Line Item" 
+                                        onclick={handleViewSourceLineItem}
+                                        variant="brand"
+                                        size="small">
+                                    </lightning-button>
+                                </div>
+                            </div>
+                            
+                            <div class="record-details">
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Bill:</span>
+                                        <span class="detail-value">{formattedSourceRecord.billExternalId}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Patient:</span>
+                                        <span class="detail-value">{formattedSourceRecord.patientId}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Procedure:</span>
+                                        <span class="detail-value">{formattedSourceRecord.procedureCode}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Service Date:</span>
+                                        <span class="detail-value">{formattedSourceRecord.formattedServiceDate}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Charge:</span>
+                                        <span class="detail-value charge-amount">{formattedSourceRecord.formattedCharge}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Matching Records Section -->
+                    <div class="matching-records-section">
+                        <div class="section-header">
+                            <lightning-icon icon-name="utility:warning" size="small" class="section-icon warning-icon"></lightning-icon>
+                            <h3 class="section-title">Matching Records ({matchCount})</h3>
+                        </div>
+                        
+                        <div class="matches-container">
+                            <template for:each={formattedMatches} for:item="match">
+                                <div key={match.recordId} class="record-card match-record">
+                                    <div class="record-header">
+                                        <span class={match.matchTypeClass}>{match.matchTypeLabel}</span>
+                                        <div class="record-actions">
+                                            <lightning-button 
+                                                label="View Bill" 
+                                                onclick={handleViewBill}
+                                                data-bill-id={match.billId}
+                                                variant="neutral"
+                                                size="small">
+                                            </lightning-button>
+                                            <lightning-button 
+                                                label="View Line Item" 
+                                                onclick={handleViewLineItem}
+                                                data-record-id={match.recordId}
+                                                variant="brand"
+                                                size="small">
+                                            </lightning-button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="record-details">
+                                        <div class="detail-grid">
+                                            <div class="detail-item">
+                                                <span class="detail-label">Bill:</span>
+                                                <span class="detail-value">{match.billExternalId}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <span class="detail-label">Patient:</span>
+                                                <span class="detail-value">{match.patientId}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <span class="detail-label">Procedure:</span>
+                                                <span class="detail-value">{match.procedureCode}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <span class="detail-label">Service Date:</span>
+                                                <span class="detail-value">{match.formattedServiceDate}</span>
+                                            </div>
+                                            <div class="detail-item">
+                                                <span class="detail-label">Charge:</span>
+                                                <span class="detail-value charge-amount">{match.formattedCharge}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Modal Footer -->
+                <footer class="slds-modal__footer">
+                    <lightning-button 
+                        label="Close" 
+                        onclick={handleClose} 
+                        variant="neutral">
+                    </lightning-button>
+                    <lightning-button
+                        label={markReviewedButtonLabel}
+                        onclick={handleMarkReviewed}
+                        variant="brand"
+                        disabled={isMarkingReviewed}>
+                    </lightning-button>
+                </footer>
+            </div>
+        </section>
+        
+        <!-- Modal Backdrop -->
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

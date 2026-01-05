@@ -1,0 +1,17 @@
+.duplicate-indicator {
+    display: inline-block;
+    margin-left: 5px;
+}
+
+.triangle-green {
+    color: #4bca81;
+}
+
+.triangle-orange {
+    color: #ff9500;
+}
+
+.duplicate-indicator:hover {
+    cursor: pointer;
+    opacity: 0.8;
+}

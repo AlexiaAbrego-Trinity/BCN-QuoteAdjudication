@@ -1,0 +1,28 @@
+<template>
+    <!-- TRINITY: Lightweight Hover Tooltip - Professional and Accessible -->
+    <div class="tooltip-container">
+        <!-- Trigger area - wraps the content that triggers the tooltip -->
+        <div 
+            class="tooltip-trigger"
+            onmouseenter={handleMouseEnter}
+            onmouseleave={handleMouseLeave}
+        >
+            <slot></slot>
+        </div>
+
+        <!-- Tooltip content - only rendered when visible -->
+        <template if:true={showTooltip}>
+            <template if:true={hasContent}>
+                <div 
+                    class={tooltipClass}
+                    style={tooltipStyle}
+                    role="tooltip"
+                    aria-hidden={showTooltip}
+                >
+                    <!-- TRINITY: Use lwc:dom="manual" for HTML content injection -->
+                    <div class="tooltip-inner" lwc:dom="manual"></div>
+                </div>
+            </template>
+        </template>
+    </div>
+</template>

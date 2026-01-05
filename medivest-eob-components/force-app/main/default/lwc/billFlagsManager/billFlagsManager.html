@@ -1,0 +1,186 @@
+<template>
+    <div class={containerClass}>
+        <!-- Loading State -->
+        <template if:true={isLoading}>
+            <div class="loading-container">
+                <lightning-spinner alternative-text="Loading flags..." size="small"></lightning-spinner>
+                <span class="loading-text">Loading bill flags...</span>
+            </div>
+        </template>
+
+        <!-- Error State -->
+        <template if:true={error}>
+            <div class="error-container">
+                <lightning-icon icon-name="utility:error" size="small" variant="error"></lightning-icon>
+                <span class="error-text">{error}</span>
+                <lightning-button 
+                    label="Retry" 
+                    onclick={handleRefresh}
+                    variant="neutral"
+                    size="small">
+                </lightning-button>
+            </div>
+        </template>
+
+        <!-- Bill Flags Interface -->
+        <template if:false={isLoading}>
+            <template if:false={error}>
+                <!-- Compact Header with Flag Triangle -->
+                <div class="flags-header" onclick={handleToggle}>
+                    <div class="header-content">
+                        <div class="header-left">
+                            <lightning-icon icon-name="utility:warning" size="small" class="header-icon"></lightning-icon>
+                            <div class="header-text">
+                                <h3 class="header-title">Bill Flags</h3>
+                                <template if:true={hasActiveFlags}>
+                                    <p class="header-subtitle">
+                                        {activeFlagCount} active flag{activeFlagCount} • Status: {flagStatus}
+                                    </p>
+                                </template>
+                                <template if:false={hasActiveFlags}>
+                                    <p class="header-subtitle">No active flags</p>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="header-right">
+                            <!-- Ray's Color-Coded Triangle System -->
+                            <template if:true={hasActiveFlags}>
+                                <div class={flagTriangleClass}>
+                                    <lightning-icon icon-name="utility:warning" size="xx-small"></lightning-icon>
+                                    <span class="flag-count">{activeFlagCount}</span>
+                                </div>
+                            </template>
+                            <lightning-icon
+                                icon-name={toggleButtonIcon}
+                                size="small"
+                                class="toggle-icon">
+                            </lightning-icon>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expandable Flag Details -->
+                <template if:true={isExpanded}>
+                    <div class="flags-content">
+                        <!-- Flag Status Overview -->
+                        <div class="status-overview">
+                            <div class="status-row">
+                                <span class="status-label">Overall Status:</span>
+                                <span class={flagStatusBadgeClass}>{flagStatus}</span>
+                            </div>
+                            <div class="status-row">
+                                <span class="status-label">Case Number:</span>
+                                <span class="status-value">{flagsData.caseNumber}</span>
+                            </div>
+                            <div class="status-row">
+                                <span class="status-label">Member Account:</span>
+                                <span class="status-value">{memberAccountInfo}</span>
+                            </div>
+                        </div>
+
+                        <!-- Individual Flag Details -->
+                        <div class="flags-grid">
+                            <!-- Exhaustion Flag -->
+                            <div class="flag-card">
+                                <div class="flag-header">
+                                    <lightning-icon 
+                                        icon-name="utility:money" 
+                                        size="small" 
+                                        variant={flagsData.exhaustAccount}>
+                                    </lightning-icon>
+                                    <span class="flag-title">Account Exhaustion</span>
+                                    <template if:true={flagsData.exhaustAccount}>
+                                        <span class="flag-indicator active">ACTIVE</span>
+                                    </template>
+                                    <template if:false={flagsData.exhaustAccount}>
+                                        <span class="flag-indicator inactive">INACTIVE</span>
+                                    </template>
+                                </div>
+                                <div class="flag-details">
+                                    <p class="flag-description">{exhaustAccountLabel}</p>
+                                    <template if:true={flagsData.accountExpirationDate}>
+                                        <p class="flag-meta">Expiration: {flagsData.accountExpirationDate}</p>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Special Handling Flag -->
+                            <div class="flag-card">
+                                <div class="flag-header">
+                                    <lightning-icon 
+                                        icon-name="utility:priority" 
+                                        size="small" 
+                                        variant={flagsData.specialHandling}>
+                                    </lightning-icon>
+                                    <span class="flag-title">Special Handling</span>
+                                    <template if:true={flagsData.specialHandling}>
+                                        <span class="flag-indicator active">ACTIVE</span>
+                                    </template>
+                                    <template if:false={flagsData.specialHandling}>
+                                        <span class="flag-indicator inactive">INACTIVE</span>
+                                    </template>
+                                </div>
+                                <div class="flag-details">
+                                    <p class="flag-description">{specialHandlingLabel}</p>
+                                    <template if:true={flagsData.flagType}>
+                                        <p class="flag-meta">Type: {flagsData.flagType}</p>
+                                    </template>
+                                    <template if:true={flagsData.flagSubType}>
+                                        <p class="flag-meta">Sub-type: {flagsData.flagSubType}</p>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Hold for Member Flag -->
+                            <div class="flag-card">
+                                <div class="flag-header">
+                                    <lightning-icon 
+                                        icon-name="utility:pause" 
+                                        size="small" 
+                                        variant={flagsData.holdForMember}>
+                                    </lightning-icon>
+                                    <span class="flag-title">Member Hold</span>
+                                    <template if:true={flagsData.holdForMember}>
+                                        <span class="flag-indicator active">ACTIVE</span>
+                                    </template>
+                                    <template if:false={flagsData.holdForMember}>
+                                        <span class="flag-indicator inactive">INACTIVE</span>
+                                    </template>
+                                </div>
+                                <div class="flag-details">
+                                    <p class="flag-description">{holdForMemberLabel}</p>
+                                    <template if:true={flagsData.holdDate}>
+                                        <p class="flag-meta">Hold Date: {formattedHoldDate}</p>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Flag Notes Section -->
+                        <template if:true={flagsData.flagNotes}>
+                            <div class="notes-section">
+                                <div class="notes-header">
+                                    <lightning-icon icon-name="utility:note" size="small"></lightning-icon>
+                                    <span class="notes-title">Flag Notes</span>
+                                </div>
+                                <div class="notes-content">
+                                    <p class="notes-text">{flagsData.flagNotes}</p>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Action Buttons -->
+                        <div class="action-buttons">
+                            <lightning-button 
+                                label="Refresh Flags" 
+                                onclick={handleRefresh}
+                                variant="neutral"
+                                icon-name="utility:refresh">
+                            </lightning-button>
+                        </div>
+                    </div>
+                </template>
+            </template>
+        </template>
+    </div>
+</template>

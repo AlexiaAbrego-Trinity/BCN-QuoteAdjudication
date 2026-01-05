@@ -1,0 +1,16 @@
+<template>
+    <!-- Case Duplicate Summary Component -->
+    <c-trm-case-duplicate-summary 
+        record-id={recordId}
+        onviewallduplicates={handleViewAllDuplicates}>
+    </c-trm-case-duplicate-summary>
+    
+    <!-- Comprehensive Duplicates Modal -->
+    <c-trm-case-all-duplicates-modal
+        is-open={isModalOpen}
+        case-id={modalCaseId}
+        case-summary={modalCaseSummary}
+        onmodalclose={handleModalClose}
+        onrefreshsummary={handleRefreshSummary}>
+    </c-trm-case-all-duplicates-modal>
+</template>

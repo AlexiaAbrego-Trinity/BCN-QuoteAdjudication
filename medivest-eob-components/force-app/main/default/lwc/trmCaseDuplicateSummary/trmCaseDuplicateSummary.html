@@ -1,0 +1,140 @@
+<template>
+    <!-- Loading State -->
+    <template if:true={isLoading}>
+        <div class="slds-card slds-p-around_medium">
+            <div class="slds-align_absolute-center">
+                <lightning-spinner alternative-text="Loading duplicate summary..." size="medium"></lightning-spinner>
+                <div class="slds-m-top_small slds-text-color_weak">Loading duplicate analysis...</div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Main Component Content -->
+    <template if:true={showComponent}>
+        <div class={componentClasses}>
+            <!-- Header Section -->
+            <div class="slds-card__header slds-border_bottom">
+                <div class="slds-media slds-media_center">
+                    <div class="slds-media__figure">
+                        <lightning-icon 
+                            icon-name={statusIconName}
+                            variant={statusIconVariant}
+                            size="medium"
+                            alternative-text="Duplicate Status">
+                        </lightning-icon>
+                    </div>
+                    <div class="slds-media__body">
+                        <h2 class="slds-card__header-title slds-text-heading_medium">
+                            Duplicate Detection Summary
+                        </h2>
+                        <template if:true={hasSummaryData}>
+                            <p class="slds-text-body_small slds-text-color_weak">
+                                Last checked: {formattedLastCheck}
+                            </p>
+                        </template>
+                    </div>
+                    <div class="slds-media__actions">
+                        <lightning-button-icon
+                            icon-name="utility:refresh"
+                            variant="border-filled"
+                            alternative-text="Refresh duplicate summary"
+                            title="Refresh"
+                            onclick={handleRefresh}
+                            disabled={isLoading}>
+                        </lightning-button-icon>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Content -->
+            <div class="slds-card__body slds-p-horizontal_medium slds-p-vertical_small">
+                <!-- Error State -->
+                <template if:true={error}>
+                    <div class="slds-notify slds-notify_alert slds-alert_error">
+                        <span class="slds-assistive-text">Error</span>
+                        <h2 class="slds-text-heading_small">
+                            Unable to load duplicate summary
+                        </h2>
+                        <p class="slds-m-top_x-small">
+                            {error.body.message}
+                        </p>
+                    </div>
+                </template>
+
+                <!-- Summary Data -->
+                <template if:true={hasSummaryData}>
+                    <!-- Summary Message -->
+                    <div class="slds-m-bottom_medium">
+                        <p class="slds-text-body_regular summary-message">
+                            {caseSummary.summaryMessage}
+                        </p>
+                    </div>
+
+                    <!-- Statistics Grid -->
+                    <div class="slds-grid slds-wrap slds-gutters_small">
+                        <!-- Total Bills -->
+                        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+                            <div class="stat-card slds-text-align_center slds-p-around_small">
+                                <div class="stat-number slds-text-heading_large">
+                                    {caseSummary.totalBills}
+                                </div>
+                                <div class="stat-label slds-text-body_small slds-text-color_weak">
+                                    {billsLabel}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Total Line Items -->
+                        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+                            <div class="stat-card slds-text-align_center slds-p-around_small">
+                                <div class="stat-number slds-text-heading_large">
+                                    {caseSummary.totalLineItems}
+                                </div>
+                                <div class="stat-label slds-text-body_small slds-text-color_weak">
+                                    {lineItemsLabel}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Exact Matches -->
+                        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+                            <div class="stat-card stat-card--exact slds-text-align_center slds-p-around_small">
+                                <div class="stat-number slds-text-heading_large">
+                                    {caseSummary.exactMatches}
+                                </div>
+                                <div class="stat-label slds-text-body_small">
+                                    {exactMatchesLabel}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Potential Matches -->
+                        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+                            <div class="stat-card stat-card--potential slds-text-align_center slds-p-around_small">
+                                <div class="stat-number slds-text-heading_large">
+                                    {caseSummary.potentialMatches}
+                                </div>
+                                <div class="stat-label slds-text-body_small">
+                                    {potentialMatchesLabel}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <template if:true={hasWarnings}>
+                        <div class="slds-m-top_medium slds-text-align_center">
+                            <lightning-button
+                                label="View All Duplicates"
+                                variant="brand"
+                                icon-name="utility:preview"
+                                onclick={handleViewAllDuplicates}
+                                class="view-all-button">
+                            </lightning-button>
+                        </div>
+                    </template>
+                </template>
+            </div>
+        </div>
+    </template>
+</template>
