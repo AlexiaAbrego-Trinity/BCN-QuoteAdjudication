@@ -2373,11 +2373,12 @@ export default class CustomBillLineItemGrid extends LightningElement {
                 // Selection state
                 selected: false, // New duplicates start unselected
 
-                // Date formatting for display
-                serviceStartDateFormatted: item.Service_Start_Date__c ?
-                    new Date(item.Service_Start_Date__c).toLocaleDateString() : '',
-                serviceEndDateFormatted: item.Service_End_Date__c ?
-                    new Date(item.Service_End_Date__c).toLocaleDateString() : '',
+                // MVADM-188: Line number from Bill_Line_Item_Number__c field
+                lineNumber: item.Bill_Line_Item_Number__c || '',
+
+                // MVADM-188: Date formatting for display (using formatDate helper for consistency)
+                formattedStartDate: this.formatDate(item.Service_Start_Date__c),
+                formattedEndDate: this.formatDate(item.Service_End_Date__c),
 
                 // Currency formatting
                 chargeFormatted: this.formatCurrency(item.Charge__c),
@@ -2410,7 +2411,10 @@ export default class CustomBillLineItemGrid extends LightningElement {
                 quantityDisplay: item.Quantity__c || '',
                 descriptionDisplay: item.Description__c || '',
                 codeDisplay: item.Code__r?.Name || '',
-                accountDisplay: item.Account__r?.Name || ''
+                accountDisplay: item.Account__r?.Name || '',
+
+                // MVADM-188: Account name from Bill relationship
+                accountName: item.Bill__r?.Member_Account__r?.Name || ''
             }));
 
             // Add processed duplicated items to grid
