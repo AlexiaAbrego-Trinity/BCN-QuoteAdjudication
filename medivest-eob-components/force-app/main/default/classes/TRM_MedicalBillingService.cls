@@ -707,6 +707,27 @@ public with sharing class TRM_MedicalBillingService {
 
             List<Bill_Line_Item__c> newItems = new List<Bill_Line_Item__c>();
 
+            // MVADM-188: Map to cache max line number per Bill (prevents redundant queries)
+            Map<Id, Decimal> billToMaxLineNumber = new Map<Id, Decimal>();
+
+            // MVADM-188: Get unique Bill IDs from original items
+            Set<Id> billIds = new Set<Id>();
+            for (Bill_Line_Item__c item : originalItems) {
+                billIds.add(item.Bill__c);
+            }
+
+            // MVADM-188: Query max line number for each Bill with FOR UPDATE lock
+            for (Id billId : billIds) {
+                List<AggregateResult> results = [
+                    SELECT MAX(Bill_Line_Item_Number__c) maxNum
+                    FROM Bill_Line_Item__c
+                    WHERE Bill__c = :billId
+                    FOR UPDATE
+                ];
+                Decimal maxNum = (Decimal)results[0].get('maxNum');
+                billToMaxLineNumber.put(billId, maxNum != null ? maxNum : 0);
+            }
+
             // Create duplicates - TRINITY: Explicit field copying to ensure date accuracy
             for (Bill_Line_Item__c original : originalItems) {
                 // TRINITY: Debug logging for date values
@@ -748,6 +769,11 @@ public with sharing class TRM_MedicalBillingService {
                     duplicate.Remark_Code_4__c = original.Remark_Code_4__c;
                     duplicate.Bill__c = original.Bill__c;
                     duplicate.TRM_BCN_Custom_Status__c = original.TRM_BCN_Custom_Status__c;
+
+                    // MVADM-188: Assign next sequential line number
+                    Decimal nextNumber = billToMaxLineNumber.get(original.Bill__c) + 1;
+                    duplicate.Bill_Line_Item_Number__c = nextNumber;
+                    billToMaxLineNumber.put(original.Bill__c, nextNumber); // Increment for next duplicate
 
                     newItems.add(duplicate);
                 }
