@@ -2442,6 +2442,9 @@ export default class CustomBillLineItemGrid extends LightningElement {
             // Add processed duplicated items to grid
             this.lineItems = [...this.lineItems, ...processedDuplicates];
 
+            // MVADM-188: Enrich code descriptions for tooltips on duplicated rows
+            this.enrichCodeDescriptions();
+
             // TRINITY PHASE 2: Immutable Set pattern - clear selection
             this.selectedIds = new Set();
 
