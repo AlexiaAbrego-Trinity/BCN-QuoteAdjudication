@@ -51,6 +51,12 @@ Status: Already completed per task document
 **Completed:** 2026-01-05
 **Deploy ID:** 0AfTH00000F1IWv0AN
 
+**Task 3.1: Fix LWC Display Issues**
+**Status:** ✅ COMPLETE
+**Started:** 2026-01-05
+**Completed:** 2026-01-05
+**Deploy ID:** 0AfTH00000F1Iez0AF
+
 ---
 
 ## Detailed Execution Records
@@ -185,6 +191,66 @@ User confirmed Option A: Modify existing method without changing signature.
 - ✅ No component failures
 - ✅ No test failures
 - ✅ Class is now live in sandbox
+
+**Task Status:** ✅ COMPLETE
+
+---
+
+### Task 3.1 Execution
+
+**Issue Reported by User:**
+User tested duplication in UI and reported two bugs:
+1. **Bug #1:** Line # column shows blank (empty) for duplicated rows
+2. **Bug #2:** Start Date and End Date show "undefined" for duplicated rows
+
+**Root Cause Analysis:**
+- Apex method `createDuplicateBillLineItems` WAS correctly assigning `Bill_Line_Item_Number__c`
+- Apex method WAS correctly copying `Service_Start_Date__c` and `Service_End_Date__c`
+- **Problem was in LWC:** `confirmDuplication()` method was not mapping fields correctly
+
+**Code Investigation:**
+Located issue in `customBillLineItemGrid.js` lines 2370-2414:
+- Missing: `lineNumber: item.Bill_Line_Item_Number__c`
+- Wrong date format: Using `serviceStartDateFormatted` instead of `formattedStartDate`
+- Missing: `accountName` mapping
+
+**Fix Applied:**
+Modified `customBillLineItemGrid.js` lines 2370-2418:
+
+```javascript
+// MVADM-188: Line number from Bill_Line_Item_Number__c field
+lineNumber: item.Bill_Line_Item_Number__c || '',
+
+// MVADM-188: Date formatting for display (using formatDate helper for consistency)
+formattedStartDate: this.formatDate(item.Service_Start_Date__c),
+formattedEndDate: this.formatDate(item.Service_End_Date__c),
+
+// ... other fields ...
+
+// MVADM-188: Account name from Bill relationship
+accountName: item.Bill__r?.Member_Account__r?.Name || ''
+```
+
+**Git Commit:**
+- Commit hash: `6e35894`
+- Message: "fix(MVADM-188): Fix duplicate row display - add lineNumber and formatted dates"
+- Files changed: 1 (customBillLineItemGrid.js)
+- Lines changed: +10, -6
+
+**Deployment:**
+- ✅ SUCCESS
+- **Deploy ID:** 0AfTH00000F1Iez0AF
+- **Target Org:** trinity@medivest.com.eobbcnb (eobbcnb)
+- **Status:** Succeeded
+- **Components Deployed:** 4/4 (entire LWC bundle)
+- **Elapsed Time:** 5.30s
+
+**Verification Steps for User:**
+1. Refresh the browser page (Ctrl+F5 to clear cache)
+2. Navigate to a BCN Case with Bill Line Items
+3. Select a row and click "Duplicate"
+4. Verify Line # column shows sequential numbers
+5. Verify Start Date and End Date show actual dates (not "undefined")
 
 **Task Status:** ✅ COMPLETE
 
