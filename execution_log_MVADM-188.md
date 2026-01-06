@@ -256,6 +256,94 @@ accountName: item.Bill__r?.Member_Account__r?.Name || ''
 
 ---
 
+## Task 3.2: Fix Empty Code Fields in Expanded View for Duplicated Rows
+
+**Status:** ✅ COMPLETE
+**Time:** 17:30 - 17:45 (15 min)
+**Deploy ID:** 0AfTH00000F1JSz0AN
+
+### Problem Identified
+
+When duplicating Bill Line Items and expanding the "Codes" column:
+- Revenue Code field appears empty
+- POS Code field appears empty
+- CPT Code field appears empty
+- Modifier field appears empty
+
+**Root Cause:**
+The duplicate row mapping in `handleDuplicateConfirm()` was missing the code field mappings that are used by the `<c-code-lookup-field>` components in expanded view.
+
+### Solution Implemented
+
+**File:** `customBillLineItemGrid.js`
+
+Added missing field mappings to the `processedDuplicates` transformation (lines 2370-2440):
+
+```javascript
+// MVADM-188: Code values for expanded view (code-lookup-field components)
+revenueCode: item.Revenue_Code__c || '',
+revenueCodeDescription: '', // Will be populated via batch lookup
+revenueCodeDisplay: item.Revenue_Code__c || '',
+
+posCode: item.Place_of_Service__c || '',
+posCodeDescription: '', // Will be populated via batch lookup
+posDisplay: item.Place_of_Service__c || '',
+
+cptCode: item.CPT_HCPCS_NDC__c || '',
+cptCodeDescription: item.Code__r?.Description__c || '', // From Code__r relationship
+cptDisplay: item.CPT_HCPCS_NDC__c || '',
+
+modifierCode: item.Modifier__c || '',
+modifierCodeDescription: '', // Will be populated via batch lookup
+modifierDisplay: item.Modifier__c || '',
+
+// Remark codes display
+remarkCode1Display: item.Remark_Code_1__c || '',
+remarkCode2Display: item.Remark_Code_2__c || '',
+remarkCode3Display: item.Remark_Code_3__c || '',
+remarkCode4Display: item.Remark_Code_4__c || '',
+
+// Tooltip placeholder
+codesDescriptionTooltip: '',
+```
+
+**Deployment:**
+```bash
+sf project deploy start --source-dir force-app/main/default/lwc/customBillLineItemGrid --target-org medivest-eobbcnb
+```
+
+- ✅ Deploy ID: 0AfTH00000F1JSz0AN
+- ✅ Status: Succeeded
+- ✅ Time: 4.18s
+
+**Git Commit:** `4d92d6f`
+
+**Verification Steps:**
+1. Refresh browser with `Ctrl + F5`
+2. Navigate to a BCN Case with Bill Line Items
+3. Select a row and click "Duplicate"
+4. Expand the "Codes" column (click on column header)
+5. Verify all code fields (Revenue, POS, CPT, Modifier) show values
+
+---
+
+## Known Issue: Flow Overwriting End Date
+
+**Issue:** Flow `Bill_Line_Item_Send_End_Date` is overwriting `Service_End_Date__c` with `Service_Start_Date__c` on insert.
+
+**Flow Details:**
+- **Name:** "Bill Line Item - Send End Date"
+- **Trigger:** Before Save (Create)
+- **Current Logic:** If `Service_Start_Date__c IS NOT NULL`, then `Service_End_Date__c = Service_Start_Date__c`
+- **Impact:** All duplicated rows have the same Start and End dates
+
+**Recommended Fix:**
+Add condition to Flow: Only execute when `Service_End_Date__c IS NULL`
+
+**Status:** ⏸️ Pending approval from team before modifying Flow
+
+---
+
 ## Error Log
 
 ### Error #1: Method Signature Mismatch
