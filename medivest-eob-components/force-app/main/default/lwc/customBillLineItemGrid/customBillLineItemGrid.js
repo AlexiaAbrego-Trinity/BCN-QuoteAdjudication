@@ -2403,15 +2403,37 @@ export default class CustomBillLineItemGrid extends LightningElement {
                 duplicateStatus: item.Duplicate_Status__c,
                 duplicateStatusLabel: this.getDuplicateStatusLabel(item.Duplicate_Status__c),
 
-                // Display names for codes
+                // MVADM-188: Code values for expanded view (code-lookup-field components)
+                revenueCode: item.Revenue_Code__c || '',
+                revenueCodeDescription: '', // Will be populated via batch lookup
                 revenueCodeDisplay: item.Revenue_Code__c || '',
+
+                posCode: item.Place_of_Service__c || '',
+                posCodeDescription: '', // Will be populated via batch lookup
                 posDisplay: item.Place_of_Service__c || '',
+
+                cptCode: item.CPT_HCPCS_NDC__c || '',
+                cptCodeDescription: item.Code__r?.Description__c || '', // From Code__r relationship
                 cptDisplay: item.CPT_HCPCS_NDC__c || '',
+
+                modifierCode: item.Modifier__c || '',
+                modifierCodeDescription: '', // Will be populated via batch lookup
                 modifierDisplay: item.Modifier__c || '',
+
+                // Other display fields
                 quantityDisplay: item.Quantity__c || '',
                 descriptionDisplay: item.Description__c || '',
                 codeDisplay: item.Code__r?.Name || '',
                 accountDisplay: item.Account__r?.Name || '',
+
+                // Remark codes display
+                remarkCode1Display: item.Remark_Code_1__c || '',
+                remarkCode2Display: item.Remark_Code_2__c || '',
+                remarkCode3Display: item.Remark_Code_3__c || '',
+                remarkCode4Display: item.Remark_Code_4__c || '',
+
+                // Tooltip placeholder
+                codesDescriptionTooltip: '',
 
                 // MVADM-188: Account name from Bill relationship
                 accountName: item.Bill__r?.Member_Account__r?.Name || ''
