@@ -1,0 +1,642 @@
+<template>
+  <lightning-quick-action-panel header="Payment Batch Manager">
+    <div class="slds-p-around_medium">
+
+      <!-- Tabs -->
+      <lightning-tabset active-tab-value={activeTab} onselect={handleTabChange}>
+
+        <!-- Tab 1: Payment Batches -->
+        <lightning-tab label="Payment Batches" value="create" icon-name="utility:moneybag">
+          <div class="slds-p-around_medium">
+
+            <!-- Mode Section -->
+            <div class="mode-section slds-box slds-theme_shade slds-m-bottom_medium">
+              <lightning-radio-group
+                name="batchMode"
+                label="Batch Mode"
+                options={modeOptions}
+                value={mode}
+                type="radio"
+                onchange={handleModeChange}>
+              </lightning-radio-group>
+
+              <div class="slds-text-color_weak slds-m-top_small slds-text-body_small">
+                <lightning-icon
+                  icon-name="utility:info"
+                  size="x-small"
+                  class="slds-m-right_xx-small">
+                </lightning-icon>
+                <template if:true={isPaidMode}>
+                  <strong>Paid mode:</strong> Selected bills will be sent to NetSuite for payment processing.
+                </template>
+                <template if:true={isZeroMode}>
+                  <strong>Zero-Dollar mode:</strong> EOBs will be generated in Salesforce only (no NetSuite sync).
+                </template>
+              </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="filter-section slds-m-bottom_medium">
+              <h3 class="slds-text-heading_small slds-m-bottom_small">
+                <lightning-icon
+                  icon-name="utility:filterList"
+                  size="x-small"
+                  class="slds-m-right_xx-small">
+                </lightning-icon>
+                Filter Bills
+              </h3>
+              <div class="slds-grid slds-wrap slds-gutters">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                  <lightning-input
+                    type="date"
+                    label="From Date"
+                    value={fromDate}
+                    onchange={handleFromDateChange}>
+                  </lightning-input>
+                </div>
+
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                  <lightning-input
+                    type="date"
+                    label="To Date"
+                    value={toDate}
+                    onchange={handleToDateChange}>
+                  </lightning-input>
+                </div>
+
+                <div class="slds-col slds-size_1-of-1 slds-m-top_small">
+                  <lightning-button
+                    variant="brand"
+                    label="Search Bills"
+                    icon-name="utility:search"
+                    onclick={handleSearch}>
+                  </lightning-button>
+                  <lightning-button
+                    class="slds-m-left_small"
+                    variant="neutral"
+                    label="Clear"
+                    icon-name="utility:clear"
+                    onclick={handleClear}>
+                  </lightning-button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Preview / Summary - Compact -->
+            <div class="summary-section-compact slds-m-bottom_small">
+              <div class="slds-grid slds-gutters_small">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                  <div class="summary-card-compact">
+                    <lightning-icon
+                      icon-name="standard:file"
+                      size="x-small"
+                      class="summary-icon-compact">
+                    </lightning-icon>
+                    <div class="summary-content-compact">
+                      <div class="summary-label-compact">Bills Found</div>
+                      <div class="summary-number-compact">{billsFound}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                  <div class="summary-card-compact summary-card-selected">
+                    <lightning-icon
+                      icon-name="standard:task2"
+                      size="x-small"
+                      class="summary-icon-compact summary-icon-selected">
+                    </lightning-icon>
+                    <div class="summary-content-compact">
+                      <div class="summary-label-compact">Bills Selected</div>
+                      <div class="summary-number-compact summary-number-selected">{billsSelected}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                  <div class="summary-card-compact summary-card-groups">
+                    <lightning-icon
+                      icon-name="standard:groups"
+                      size="x-small"
+                      class="summary-icon-compact summary-icon-groups">
+                    </lightning-icon>
+                    <div class="summary-content-compact">
+                      <div class="summary-label-compact">Provider Groups</div>
+                      <div class="summary-number-compact summary-number-groups">{groupsCount}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bills Table -->
+            <div class="bills-table-section">
+              <template if:true={isLoading}>
+                <div class="slds-text-align_center slds-p-vertical_large">
+                  <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+                  <p class="slds-text-color_weak slds-m-top_small">Loading bills...</p>
+                </div>
+              </template>
+
+              <template if:false={isLoading}>
+                <template if:true={rows.length}>
+                  <div class="table-header slds-m-bottom_small">
+                    <h3 class="slds-text-heading_small">
+                      <lightning-icon
+                        icon-name="utility:table"
+                        size="x-small"
+                        class="slds-m-right_xx-small">
+                      </lightning-icon>
+                      Select Bills for Batch
+                    </h3>
+                  </div>
+                  <div class="bills-table-container">
+                    <lightning-datatable
+                      key-field="id"
+                      data={rows}
+                      columns={columns}
+                      onrowselection={handleRowSelection}>
+                    </lightning-datatable>
+                  </div>
+                </template>
+              </template>
+            </div>
+
+            <!-- Create Button -->
+            <template if:true={rows.length}>
+              <div class="slds-m-top_medium slds-text-align_right">
+                <lightning-button
+                  variant="brand"
+                  label="Start Check Run"
+                  icon-name="utility:moneybag"
+                  onclick={handleCreateBatch}
+                  disabled={isLoading}
+                  class="create-batch-button">
+                </lightning-button>
+              </div>
+            </template>
+
+          </div>
+        </lightning-tab>
+
+        <!-- Tab 2: Batch History -->
+        <lightning-tab label="Batch History" value="history" icon-name="utility:list">
+          <div class="slds-p-around_medium">
+
+            <!-- Header with Refresh Button -->
+            <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
+              <div class="slds-col">
+                <h2 class="slds-text-heading_small slds-text-color_weak">
+                  Recent EOB Batches
+                </h2>
+              </div>
+              <div class="slds-col slds-no-flex">
+                <lightning-button
+                  variant="neutral"
+                  label="Refresh"
+                  icon-name="utility:refresh"
+                  onclick={refreshBatches}>
+                </lightning-button>
+              </div>
+            </div>
+
+            <template if:true={isLoading}>
+              <lightning-spinner alternative-text="Loading..."></lightning-spinner>
+            </template>
+
+            <!-- Empty State -->
+            <template if:false={isLoading}>
+              <template if:false={batches.length}>
+                <div class="slds-illustration slds-illustration_small">
+                  <div class="slds-text-align_center slds-p-vertical_xx-large">
+                    <lightning-icon
+                      icon-name="custom:custom48"
+                      size="large"
+                      class="slds-m-bottom_medium">
+                    </lightning-icon>
+                    <h3 class="slds-text-heading_medium slds-m-bottom_small">
+                      No EOB Batches Yet
+                    </h3>
+                    <p class="slds-text-body_regular slds-text-color_weak">
+                      Create your first EOB Batch using the "Create Batch" tab.
+                    </p>
+                    <div class="slds-m-top_medium">
+                      <lightning-button
+                        variant="brand"
+                        label="Go to Create Batch"
+                        icon-name="utility:add"
+                        onclick={handleGoToCreate}>
+                      </lightning-button>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Batches Table -->
+              <template if:true={batches.length}>
+                <div class="batch-table-container">
+                  <lightning-datatable
+                    key-field="id"
+                    data={batches}
+                    columns={batchColumns}
+                    onrowaction={handleBatchAction}
+                    hide-checkbox-column>
+                  </lightning-datatable>
+                </div>
+              </template>
+            </template>
+
+          </div>
+        </lightning-tab>
+
+        <!-- Tab 3: Generate EOBs -->
+        <lightning-tab label="Generate EOBs" value="generate" icon-name="utility:file" onactive={handleGenerateTabActive}>
+          <div class="slds-p-around_medium">
+
+            <!-- Header -->
+            <div class="slds-m-bottom_medium">
+              <h2 class="slds-text-heading_medium">
+                <lightning-icon
+                  icon-name="utility:file"
+                  size="small"
+                  class="slds-m-right_xx-small">
+                </lightning-icon>
+                Generate EOB PDFs
+              </h2>
+              <p class="slds-text-color_weak slds-m-top_x-small">
+                Select bill type to view provider groups ready for EOB generation.
+              </p>
+            </div>
+
+            <!-- Batch Type Selector -->
+            <div class="mode-section slds-box slds-theme_shade slds-m-bottom_medium">
+              <lightning-radio-group
+                name="generateBatchType"
+                label="Bill Type"
+                options={generateBatchTypeOptions}
+                value={generateBatchType}
+                type="button"
+                onchange={handleGenerateBatchTypeChange}>
+              </lightning-radio-group>
+
+              <div class="slds-text-color_weak slds-m-top_small slds-text-body_small">
+                <lightning-icon
+                  icon-name="utility:info"
+                  size="x-small"
+                  class="slds-m-right_xx-small">
+                </lightning-icon>
+                <template if:true={isGeneratePaidMode}>
+                  <strong>Paid Bills:</strong> Shows provider groups with bills that have completed NetSuite payment processing.
+                </template>
+                <template if:true={isGenerateZeroMode}>
+                  <strong>Zero-Dollar Bills:</strong> Shows provider groups with zero-dollar bills ready to generate.
+                </template>
+              </div>
+            </div>
+
+            <!-- Loading State -->
+            <template if:true={isLoading}>
+              <div class="slds-text-align_center slds-p-vertical_large">
+                <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+                <p class="slds-text-color_weak slds-m-top_small">Loading provider groups...</p>
+              </div>
+            </template>
+
+            <!-- Content Display -->
+            <template if:false={isLoading}>
+
+              <!-- Empty State -->
+              <template if:false={hasProviderGroups}>
+                <div class="slds-illustration slds-illustration_small">
+                  <div class="slds-text-align_center slds-p-vertical_xx-large">
+                    <lightning-icon
+                      icon-name="custom:custom48"
+                      size="large"
+                      class="slds-m-bottom_medium">
+                    </lightning-icon>
+                    <h3 class="slds-text-heading_medium slds-m-bottom_small">
+                      No Provider Groups Ready
+                    </h3>
+                    <p class="slds-text-body_regular slds-text-color_weak">
+                      <template if:true={isGeneratePaidMode}>
+                        There are no Paid bills ready for EOB generation.<br/>
+                        Bills must complete NetSuite payment processing first.
+                      </template>
+                      <template if:true={isGenerateZeroMode}>
+                        There are no Zero-Dollar bills ready for EOB generation.
+                      </template>
+                    </p>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Provider Groups List -->
+              <template if:true={hasProviderGroups}>
+
+                <!-- Summary Cards -->
+                    <div class="slds-grid slds-gutters_small slds-m-bottom_medium">
+                      <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                        <div class="summary-card-compact">
+                          <lightning-icon
+                            icon-name="standard:groups"
+                            size="x-small"
+                            class="summary-icon-compact">
+                          </lightning-icon>
+                          <div class="summary-content-compact">
+                            <div class="summary-label-compact">Provider Groups</div>
+                            <div class="summary-number-compact">{groupCount}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                        <div class="summary-card-compact">
+                          <lightning-icon
+                            icon-name="standard:file"
+                            size="x-small"
+                            class="summary-icon-compact">
+                          </lightning-icon>
+                          <div class="summary-content-compact">
+                            <div class="summary-label-compact">Total Bills</div>
+                            <div class="summary-number-compact">{totalBillsInGroups}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                        <div class="summary-card-compact">
+                          <lightning-icon
+                            icon-name="standard:document"
+                            size="x-small"
+                            class="summary-icon-compact">
+                          </lightning-icon>
+                          <div class="summary-content-compact">
+                            <div class="summary-label-compact">Selected Groups</div>
+                            <div class="summary-number-compact">{selectedGroupCount}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Provider Groups Table -->
+                    <template if:true={providerGroups.length}>
+                      <div class="slds-m-bottom_medium">
+                        <div class="slds-grid slds-grid_align-spread slds-m-bottom_small">
+                          <h3 class="slds-text-heading_small">
+                            <lightning-icon
+                              icon-name="utility:groups"
+                              size="x-small"
+                              class="slds-m-right_xx-small">
+                            </lightning-icon>
+                            Provider+Address Groups (Select to Generate)
+                          </h3>
+                        </div>
+
+                        <!-- Search Box -->
+                        <lightning-input
+                          type="search"
+                          label="Search Providers"
+                          placeholder="Search by provider name or address..."
+                          value={searchTerm}
+                          onchange={handleSearchChange}
+                          class="slds-m-bottom_small">
+                        </lightning-input>
+
+                        <!-- Select All / Deselect All -->
+                        <div class="slds-m-bottom_small">
+                          <lightning-button
+                            label="Select All"
+                            onclick={handleSelectAll}
+                            class="slds-m-right_x-small">
+                          </lightning-button>
+                          <lightning-button
+                            label="Deselect All"
+                            onclick={handleDeselectAll}>
+                          </lightning-button>
+                        </div>
+
+                        <!-- Data Table -->
+                        <lightning-datatable
+                          key-field="key"
+                          data={filteredProviderGroups}
+                          columns={groupColumns}
+                          hide-checkbox-column
+                          onrowaction={handleRowAction}>
+                        </lightning-datatable>
+                      </div>
+
+                      <!-- Generate Button -->
+                      <div class="slds-text-align_center slds-m-top_large">
+                        <lightning-button
+                          variant="brand"
+                          label={generateButtonLabel}
+                          icon-name="utility:download"
+                          onclick={handleGenerate}
+                          disabled={isGenerating}
+                          class="slds-m-right_small">
+                        </lightning-button>
+
+                        <template if:true={isGenerating}>
+                          <div class="slds-m-top_medium">
+                            <lightning-spinner alternative-text="Generating..." size="small"></lightning-spinner>
+                            <p class="slds-text-color_weak slds-m-top_small">
+                              Generating {selectedGroupCount} EOB PDFs...
+                            </p>
+                          </div>
+                        </template>
+                      </div>
+
+                </template>
+
+            </template>
+
+            </template>
+
+          </div>
+        </lightning-tab>
+
+        <!-- Tab 4: On-Demand EOBs -->
+        <lightning-tab label="On-Demand EOBs" value="ondemand" icon-name="utility:preview">
+          <div class="slds-p-around_medium">
+
+            <!-- Header -->
+            <div class="slds-m-bottom_medium">
+              <h2 class="slds-text-heading_medium">
+                <lightning-icon
+                  icon-name="utility:preview"
+                  size="small"
+                  class="slds-m-right_xx-small">
+                </lightning-icon>
+                On-Demand EOB Generation
+              </h2>
+              <p class="slds-text-color_weak slds-m-top_x-small">
+                Generate EOB previews without affecting payment status or NetSuite integration.
+              </p>
+            </div>
+
+            <!-- Info Box -->
+            <div class="slds-box slds-theme_info slds-m-bottom_medium">
+              <div class="slds-media">
+                <div class="slds-media__figure">
+                  <lightning-icon
+                    icon-name="utility:info"
+                    size="small"
+                    variant="inverse">
+                  </lightning-icon>
+                </div>
+                <div class="slds-media__body">
+                  <p class="slds-text-body_regular">
+                    <strong>Note:</strong> This will NOT affect payment status, modify bills, or trigger NetSuite integration.
+                    Use this for re-sends, previews, audits, or ad-hoc requests.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="filter-section slds-m-bottom_medium">
+              <h3 class="slds-text-heading_small slds-m-bottom_small">
+                <lightning-icon
+                  icon-name="utility:filterList"
+                  size="x-small"
+                  class="slds-m-right_xx-small">
+                </lightning-icon>
+                Filter Bills
+              </h3>
+              <div class="slds-grid slds-wrap slds-gutters">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                  <lightning-input
+                    type="date"
+                    label="From Date"
+                    value={onDemandFromDate}
+                    onchange={handleOnDemandFromDateChange}>
+                  </lightning-input>
+                </div>
+
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                  <lightning-input
+                    type="date"
+                    label="To Date"
+                    value={onDemandToDate}
+                    onchange={handleOnDemandToDateChange}>
+                  </lightning-input>
+                </div>
+
+                <div class="slds-col slds-size_1-of-1 slds-m-top_small">
+                  <lightning-button
+                    variant="brand"
+                    label="Search Bills"
+                    icon-name="utility:search"
+                    onclick={handleOnDemandSearch}>
+                  </lightning-button>
+                  <lightning-button
+                    class="slds-m-left_small"
+                    variant="neutral"
+                    label="Clear"
+                    icon-name="utility:clear"
+                    onclick={handleOnDemandClear}>
+                  </lightning-button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="summary-section-compact slds-m-bottom_small">
+              <div class="slds-grid slds-gutters_small">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                  <div class="summary-card-compact">
+                    <lightning-icon
+                      icon-name="standard:file"
+                      size="x-small"
+                      class="summary-icon-compact">
+                    </lightning-icon>
+                    <div class="summary-content-compact">
+                      <div class="summary-label-compact">Bills Found</div>
+                      <div class="summary-number-compact">{onDemandBillsFound}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                  <div class="summary-card-compact">
+                    <lightning-icon
+                      icon-name="standard:task2"
+                      size="x-small"
+                      class="summary-icon-compact">
+                    </lightning-icon>
+                    <div class="summary-content-compact">
+                      <div class="summary-label-compact">Bills Selected</div>
+                      <div class="summary-number-compact">{onDemandBillsSelected}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                  <div class="summary-card-compact">
+                    <lightning-icon
+                      icon-name="standard:groups"
+                      size="x-small"
+                      class="summary-icon-compact">
+                    </lightning-icon>
+                    <div class="summary-content-compact">
+                      <div class="summary-label-compact">Provider Groups</div>
+                      <div class="summary-number-compact">{onDemandGroupsCount}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bills Table -->
+            <template if:true={isLoading}>
+              <lightning-spinner alternative-text="Loading..."></lightning-spinner>
+            </template>
+
+            <template if:false={isLoading}>
+              <template if:true={onDemandRows.length}>
+                <div class="table-header slds-m-bottom_small">
+                  <h3 class="slds-text-heading_small">
+                    <lightning-icon
+                      icon-name="utility:table"
+                      size="x-small"
+                      class="slds-m-right_xx-small">
+                    </lightning-icon>
+                    Select Bills for On-Demand EOB
+                  </h3>
+                </div>
+                <div class="bills-table-container">
+                  <lightning-datatable
+                    key-field="id"
+                    data={onDemandRows}
+                    columns={onDemandColumns}
+                    onrowselection={handleOnDemandRowSelection}>
+                  </lightning-datatable>
+                </div>
+              </template>
+            </template>
+
+            <!-- Action Button -->
+            <div class="slds-m-top_medium slds-text-align_center">
+              <lightning-button
+                variant="brand"
+                label="Create On-Demand Batch"
+                icon-name="utility:preview"
+                onclick={handleCreateOnDemandBatch}
+                disabled={isOnDemandButtonDisabled}
+                class="create-batch-button">
+              </lightning-button>
+            </div>
+
+          </div>
+        </lightning-tab>
+
+      </lightning-tabset>
+
+    </div>
+
+    <!-- Footer -->
+    <div slot="footer">
+      <lightning-button variant="neutral" label="Close" onclick={handleCancel}></lightning-button>
+    </div>
+  </lightning-quick-action-panel>
+</template>

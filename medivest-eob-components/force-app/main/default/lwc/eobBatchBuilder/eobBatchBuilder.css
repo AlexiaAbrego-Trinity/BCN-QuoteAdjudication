@@ -1,0 +1,179 @@
+/* ========================================
+   EOB Batch Manager - Enhanced Styles
+   ======================================== */
+
+/* Mode Section */
+.mode-section {
+  background: linear-gradient(135deg, #f3f6f9 0%, #ffffff 100%);
+  border-left: 4px solid #0176d3;
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Filter Section */
+.filter-section {
+  padding: 1rem;
+  background: #fafaf9;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e5e5;
+}
+
+.filter-section h3 {
+  color: #3e3e3c;
+  display: flex;
+  align-items: center;
+}
+
+/* Summary Cards - Compact Version */
+.summary-section-compact {
+  margin-top: 1rem;
+}
+
+.summary-card-compact {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  gap: 0.75rem;
+}
+
+.summary-card-compact:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  border-color: #d0d0d0;
+}
+
+.summary-card-selected {
+  border-left: 3px solid #2e844a;
+}
+
+.summary-card-groups {
+  border-left: 3px solid #e07c3e;
+}
+
+.summary-icon-compact {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.summary-icon-selected {
+  --sds-c-icon-color-background: #2e844a;
+}
+
+.summary-icon-groups {
+  --sds-c-icon-color-background: #e07c3e;
+}
+
+.summary-content-compact {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.summary-label-compact {
+  font-size: 0.75rem;
+  color: #706e6b;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.summary-number-compact {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0176d3;
+  line-height: 1;
+}
+
+.summary-number-selected {
+  color: #2e844a;
+}
+
+.summary-number-groups {
+  color: #e07c3e;
+}
+
+/* Legacy Summary Styles (for backward compatibility) */
+.slds-text-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08rem;
+  color: #706e6b;
+  font-weight: 600;
+}
+
+/* Table Sections */
+.bills-table-section,
+.batch-table-container {
+  margin-top: 1.5rem;
+}
+
+.table-header h3 {
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+}
+
+.bills-table-container,
+.batch-table-container {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e5e5;
+}
+
+/* Create Batch Button */
+.create-batch-button {
+  font-weight: 600;
+  padding: 0.75rem 2rem;
+  transition: all 0.2s ease;
+}
+
+.create-batch-button:hover {
+  transform: translateY(-2px);
+}
+
+/* Coming Soon Section */
+.coming-soon-container {
+  padding: 3rem 2rem;
+}
+
+.coming-soon-icon-wrapper {
+  display: inline-block;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f3f6f9 0%, #e8f4f8 100%);
+  border-radius: 50%;
+  margin-bottom: 1rem;
+}
+
+.coming-soon-icon {
+  --sds-c-icon-color-background: #0176d3;
+}
+
+/* Empty State */
+.slds-illustration {
+  padding: 2rem;
+}
+
+/* Legacy Styles */
+.summary-grid {
+    text-align: center;
+}
+
+.summary-item {
+    padding: 1rem;
+    border: 1px solid var(--lwc-colorBorder, #d8dde6);
+    border-radius: 0.25rem;
+    background: var(--lwc-colorBackgroundAlt, #f3f2f2);
+}
+
+.summary-label {
+    font-size: 0.875rem;
+    color: var(--lwc-colorTextWeak, #54698d);
+    font-weight: 600;
+}
+
